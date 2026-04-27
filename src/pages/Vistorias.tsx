@@ -71,7 +71,8 @@ export default function Vistorias() {
       return
     }
 
- setVistorias((data || []) as unknown as Vistoria[])
+    setVistorias((data || []) as unknown as Vistoria[])
+  }
 
   const carregarChecklists = async () => {
     const { data, error } = await supabase
@@ -120,7 +121,6 @@ export default function Vistorias() {
     carregarVistorias()
   }
 
-  // ✅ FUNÇÃO AJUSTADA AQUI
   const gerarNaoConformidade = async (
     vistoriaId: string,
     itemChecklist: string,
@@ -143,7 +143,7 @@ export default function Vistorias() {
         descricao:
           observacaoChecklist ||
           `Não conformidade gerada automaticamente para o item: ${itemChecklist}`,
-        status: 'aberta', // 🔥 CORRIGIDO AQUI
+        status: 'aberta',
         user_id: userData.user?.id
       }
     ])
