@@ -1,0 +1,3 @@
+cd "C:\Users\ppeli\OneDrive\Área de Trabalho\condosafe"
+npm run dev
+
