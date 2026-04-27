@@ -3,9 +3,9 @@ import { supabase } from '../lib/supabase'
 
 type NaoConformidade = {
   id: string
-  item_checklist: string
-  descricao: string | null
-  status: 'aberta' | 'andamento' | 'concluida'
+  descricao: string
+  status: string
+  item_checklist: string | null
   created_at: string
   condominios?: {
     nome: string
@@ -17,15 +17,18 @@ type NaoConformidade = {
 
 export default function NaoConformidades() {
   const [naoConformidades, setNaoConformidades] = useState<NaoConformidade[]>([])
+  const [carregando, setCarregando] = useState(true)
 
   const carregarNaoConformidades = async () => {
+    setCarregando(true)
+
     const { data, error } = await supabase
       .from('nao_conformidades')
       .select(`
         id,
-        item_checklist,
         descricao,
         status,
+        item_checklist,
         created_at,
         condominios (
           nome
@@ -38,20 +41,19 @@ export default function NaoConformidades() {
 
     if (error) {
       alert('Erro ao carregar não conformidades: ' + error.message)
+      setCarregando(false)
       return
     }
 
     setNaoConformidades((data || []) as unknown as NaoConformidade[])
+    setCarregando(false)
   }
 
   useEffect(() => {
     carregarNaoConformidades()
   }, [])
 
-  const atualizarStatus = async (
-    id: string,
-    novoStatus: 'aberta' | 'andamento' | 'concluida'
-  ) => {
+  const atualizarStatus = async (id: string, novoStatus: string) => {
     const { error } = await supabase
       .from('nao_conformidades')
       .update({ status: novoStatus })
@@ -65,192 +67,68 @@ export default function NaoConformidades() {
     carregarNaoConformidades()
   }
 
-  const formatarStatus = (status: string) => {
-    if (status === 'aberta') return '🔴 Aberta'
-    if (status === 'andamento') return '🟠 Em andamento'
-    if (status === 'concluida') return '🟢 Concluída'
-    return status
-  }
-
-  const corStatus = (status: string) => {
-    if (status === 'aberta') return '#e53935'
-    if (status === 'andamento') return '#fb8c00'
-    if (status === 'concluida') return '#43a047'
-    return '#333'
-  }
-
   return (
     <>
       <div className="header">
         <h1>Não Conformidades</h1>
-        <p>Controle das falhas geradas automaticamente pelos checklists NOK.</p>
+        <p>Controle das irregularidades encontradas nas vistorias.</p>
       </div>
 
       <div className="card">
-        <h3>Lista de Não Conformidades ({naoConformidades.length})</h3>
+        <h3>Lista de Não Conformidades</h3>
 
-        {naoConformidades.length === 0 ? (
+        {carregando ? (
+          <p>Carregando...</p>
+        ) : naoConformidades.length === 0 ? (
           <p>Nenhuma não conformidade registrada ainda.</p>
         ) : (
           naoConformidades.map((nc) => (
             <div key={nc.id} className="list-item">
               <div>
-                <strong>{nc.item_checklist}</strong>
+                <strong>{nc.item_checklist || 'Item não informado'}</strong>
                 <br />
-                Condomínio: {nc.condominios?.[0]?.nome || 'Não informado'}
-                <br />
-                Vistoria: {nc.vistorias?.[0]?.descricao || 'Não informada'}
-                <br />
-                Observação: {nc.descricao || 'Sem descrição'}
-                <br />
-                Data: {new Date(nc.created_at).toLocaleDateString()}
-              </div>
 
-              <div>
-                <strong style={{ color: corStatus(nc.status), fontWeight: 'bold' }}>
-                  {formatarStatus(nc.status)}
-                </strong>
+                <small>
+                  Condomínio: {nc.condominios?.[0]?.nome || 'Não informado'}
+                </small>
+                <br />
 
+                <small>
+                  Vistoria: {nc.vistorias?.[0]?.descricao || 'Não informada'}
+                </small>
                 <br /><br />
 
-                <select
-                  value={nc.status}
-                  onChange={(e) =>
-                    atualizarStatus(
-                      nc.id,
-                      e.target.value as 'aberta' | 'andamento' | 'concluida'
-                    )
-                  }
-                >
-                  <option value="aberta">🔴 Aberta</option>
-                  <option value="andamento">🟠 Em andamento</option>
-                  <option value="concluida">🟢 Concluída</option>
-                </select>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </>
-  )
-}
-
-export default function NaoConformidades() {
-  const [naoConformidades, setNaoConformidades] = useState<NaoConformidade[]>([])
-
-  const carregarNaoConformidades = async () => {
-    const { data, error } = await supabase
-      .from('nao_conformidades')
-      .select(`
-        id,
-        item_checklist,
-        descricao,
-        status,
-        created_at,
-        condominios (
-          nome
-        ),
-        vistorias (
-          descricao
-        )
-      `)
-      .order('created_at', { ascending: false })
-
-    if (error) {
-      alert('Erro ao carregar não conformidades: ' + error.message)
-      return
-    }
-
-    setNaoConformidades((data || []) as NaoConformidade[])
-  }
-
-  useEffect(() => {
-    carregarNaoConformidades()
-  }, [])
-
-  const atualizarStatus = async (
-    id: string,
-    novoStatus: 'aberta' | 'andamento' | 'concluida'
-  ) => {
-    const { error } = await supabase
-      .from('nao_conformidades')
-      .update({ status: novoStatus })
-      .eq('id', id)
-
-    if (error) {
-      alert('Erro ao atualizar status: ' + error.message)
-      return
-    }
-
-    carregarNaoConformidades()
-  }
-
-  const formatarStatus = (status: string) => {
-    if (status === 'aberta') return '🔴 Aberta'
-    if (status === 'andamento') return '🟠 Em andamento'
-    if (status === 'concluida') return '🟢 Concluída'
-    return status
-  }
-
-  const corStatus = (status: string) => {
-    if (status === 'aberta') return '#e53935'
-    if (status === 'andamento') return '#fb8c00'
-    if (status === 'concluida') return '#43a047'
-    return '#333'
-  }
-
-  return (
-    <>
-      <div className="header">
-        <h1>Não Conformidades</h1>
-        <p>Controle das falhas geradas automaticamente pelos checklists NOK.</p>
-      </div>
-
-      <div className="card">
-        {/* 🔥 contador aqui */}
-        <h3>Lista de Não Conformidades ({naoConformidades.length})</h3>
-
-        {naoConformidades.length === 0 ? (
-          <p>Nenhuma não conformidade registrada ainda.</p>
-        ) : (
-          naoConformidades.map((nc) => (
-            <div key={nc.id} className="list-item">
-              <div>
-                <strong>{nc.item_checklist}</strong>
+                <span>{nc.descricao}</span>
                 <br />
-                Condomínio: {nc.condominios?.nome || 'Não informado'}
-                <br />
-                Vistoria: {nc.vistorias?.descricao || 'Não informada'}
-                <br />
-                Observação: {nc.descricao || 'Sem descrição'}
-                <br />
-                Data: {new Date(nc.created_at).toLocaleDateString()}
+
+                <small>
+                  Criada em: {new Date(nc.created_at).toLocaleDateString()}
+                </small>
               </div>
 
               <div>
                 <strong
                   style={{
-                    color: corStatus(nc.status),
-                    fontWeight: 'bold'
+                    color:
+                      nc.status === 'aberta'
+                        ? 'red'
+                        : nc.status === 'em andamento'
+                        ? 'orange'
+                        : 'green'
                   }}
                 >
-                  {formatarStatus(nc.status)}
+                  {nc.status}
                 </strong>
 
                 <br /><br />
 
                 <select
                   value={nc.status}
-                  onChange={(e) =>
-                    atualizarStatus(
-                      nc.id,
-                      e.target.value as 'aberta' | 'andamento' | 'concluida'
-                    )
-                  }
+                  onChange={(e) => atualizarStatus(nc.id, e.target.value)}
                 >
-                  <option value="aberta">🔴 Aberta</option>
-                  <option value="andamento">🟠 Em andamento</option>
-                  <option value="concluida">🟢 Concluída</option>
+                  <option value="aberta">Aberta</option>
+                  <option value="em andamento">Em andamento</option>
+                  <option value="concluida">Concluída</option>
                 </select>
               </div>
             </div>
