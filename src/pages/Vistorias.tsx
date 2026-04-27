@@ -13,7 +13,7 @@ type Vistoria = {
   condominio_id: string
   condominios?: {
     nome: string
-  }
+  }[]
 }
 
 type ChecklistResposta = {
@@ -234,7 +234,7 @@ export default function Vistorias() {
           vistorias.map((v) => (
             <div key={v.id} className="list-item">
               <div>
-                <strong>{v.condominios?.nome}</strong>
+                <strong>{v.condominios?.[0]?.nome}</strong>
                 <br />
                 {v.descricao}
               </div>
@@ -255,7 +255,7 @@ export default function Vistorias() {
           <option value="">Selecione a vistoria</option>
           {vistorias.map((v) => (
             <option key={v.id} value={v.id}>
-              {v.condominios?.nome} - {v.descricao}
+              {v.condominios?.[0]?.nome} - {v.descricao}
             </option>
           ))}
         </select>
