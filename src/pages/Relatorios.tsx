@@ -7,8 +7,8 @@ type NaoConformidade = {
   descricao: string | null
   status: string
   created_at: string
-  condominios?: { nome: string }
-  vistorias?: { descricao: string }
+  condominios?: { nome: string }[]
+  vistorias?: { descricao: string }[]
 }
 
 type PlanoAcao = {
@@ -17,7 +17,7 @@ type PlanoAcao = {
   responsavel: string | null
   prazo: string | null
   status: string
-  nao_conformidades?: { item_checklist: string }
+  nao_conformidades?: { item_checklist: string }[]
 }
 
 export default function Relatorios() {
@@ -60,8 +60,8 @@ export default function Relatorios() {
       return
     }
 
-    setNcs((dadosNCs || []) as NaoConformidade[])
-    setPlanos((dadosPlanos || []) as PlanoAcao[])
+    setNcs((dadosNCs || []) as unknown as NaoConformidade[])
+    setPlanos((dadosPlanos || []) as unknown as PlanoAcao[])
   }
 
   useEffect(() => {
@@ -126,7 +126,7 @@ export default function Relatorios() {
           <p><strong>Empresa/Sistema:</strong> Datainsight SST</p>
           <p><strong>Tipo:</strong> Relatório de inspeção e acompanhamento</p>
           <p><strong>Responsável pela inspeção:</strong> ______________________________</p>
-          <p><strong>Condomínio:</strong> {ncs[0]?.condominios?.nome || 'Não informado'}</p>
+          <p><strong>Condomínio:</strong> {ncs[0]?.condominios?.[0]?.nome || 'Não informado'}</p>
         </div>
 
         <h2>2. Resumo Executivo</h2>
@@ -161,8 +161,8 @@ export default function Relatorios() {
           ncs.map((nc, index) => (
             <div key={nc.id} className="report-item">
               <h3>NC {index + 1} — {nc.item_checklist}</h3>
-              <p><strong>Condomínio:</strong> {nc.condominios?.nome || 'Não informado'}</p>
-              <p><strong>Vistoria:</strong> {nc.vistorias?.descricao || 'Não informada'}</p>
+              <p><strong>Condomínio:</strong> {nc.condominios?.[0]?.nome || 'Não informado'}</p>
+              <p><strong>Vistoria:</strong> {nc.vistorias?.[0]?.descricao || 'Não informada'}</p>
               <p><strong>Descrição:</strong> {nc.descricao || 'Sem descrição'}</p>
               <p><strong>Status:</strong> {formatarStatusNC(nc.status)}</p>
               <p><strong>Data:</strong> {new Date(nc.created_at).toLocaleDateString()}</p>
@@ -178,7 +178,7 @@ export default function Relatorios() {
           planos.map((p, index) => (
             <div key={p.id} className="report-item">
               <h3>Ação {index + 1} — {p.acao}</h3>
-              <p><strong>NC relacionada:</strong> {p.nao_conformidades?.item_checklist || 'Não informada'}</p>
+              <p><strong>NC relacionada:</strong> {p.nao_conformidades?.[0]?.item_checklist || 'Não informada'}</p>
               <p><strong>Responsável:</strong> {p.responsavel || 'Não informado'}</p>
               <p><strong>Prazo:</strong> {p.prazo ? new Date(p.prazo).toLocaleDateString() : 'Sem prazo'}</p>
               <p><strong>Status:</strong> {formatarStatusPlano(p.status)}</p>
