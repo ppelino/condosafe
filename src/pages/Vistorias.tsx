@@ -71,8 +71,7 @@ export default function Vistorias() {
       return
     }
 
-    setVistorias(data || [])
-  }
+ setVistorias((data || []) as unknown as Vistoria[])
 
   const carregarChecklists = async () => {
     const { data, error } = await supabase
