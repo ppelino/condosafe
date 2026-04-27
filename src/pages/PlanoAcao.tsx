@@ -15,7 +15,7 @@ type PlanoAcaoItem = {
   created_at: string
   nao_conformidades?: {
     item_checklist: string
-  }
+  }[]
 }
 
 export default function PlanoAcao() {
@@ -62,7 +62,7 @@ export default function PlanoAcao() {
       return
     }
 
-    setPlanos((data || []) as PlanoAcaoItem[])
+    setPlanos((data || []) as unknown as PlanoAcaoItem[])
   }
 
   useEffect(() => {
@@ -195,7 +195,7 @@ export default function PlanoAcao() {
               <div>
                 <strong>{p.acao}</strong>
                 <br />
-                NC: {p.nao_conformidades?.item_checklist || 'Não informada'}
+                NC: {p.nao_conformidades?.[0]?.item_checklist || 'Não informada'}
                 <br />
                 Responsável: {p.responsavel || 'Não informado'}
                 <br />
@@ -203,12 +203,7 @@ export default function PlanoAcao() {
               </div>
 
               <div>
-                <strong
-                  style={{
-                    color: corStatus(p.status),
-                    fontWeight: 'bold'
-                  }}
-                >
+                <strong style={{ color: corStatus(p.status), fontWeight: 'bold' }}>
                   {formatarStatus(p.status)}
                 </strong>
 
