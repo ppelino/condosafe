@@ -75,6 +75,7 @@ export default function Relatorios() {
   const formatarStatusNC = (status: string) => {
     if (status === 'aberta') return 'Aberta'
     if (status === 'andamento') return 'Em andamento'
+    if (status === 'em andamento') return 'Em andamento'
     if (status === 'concluida') return 'Concluída'
     return status
   }
@@ -82,15 +83,25 @@ export default function Relatorios() {
   const formatarStatusPlano = (status: string) => {
     if (status === 'pendente') return 'Pendente'
     if (status === 'andamento') return 'Em andamento'
+    if (status === 'em andamento') return 'Em andamento'
     if (status === 'concluido') return 'Concluído'
     return status
   }
 
+  const ncsAbertas = ncs.filter((n) => n.status === 'aberta').length
+  const planosPendentes = planos.filter((p) => p.status === 'pendente').length
+  const planosConcluidos = planos.filter((p) => p.status === 'concluido').length
+  const condominioNome = ncs[0]?.condominios?.[0]?.nome || 'Não informado'
+
   return (
     <>
       <div className="header no-print">
-        <h1>Relatórios</h1>
-        <p>Relatório técnico das não conformidades e planos de ação.</p>
+        <div className="premium-badge">CondoSafe Inspector</div>
+        <h1>Relatório Técnico Premium</h1>
+        <p>
+          Documento gerado automaticamente com base nas vistorias, não conformidades e planos de ação.
+        </p>
+        <br />
         <button onClick={imprimirPDF}>Gerar PDF / Imprimir</button>
       </div>
 
@@ -106,16 +117,28 @@ export default function Relatorios() {
             <div>
               <h1 style={{ margin: 0 }}>Datainsight SST</h1>
               <p style={{ margin: 0 }}>
-                Sistema de Vistorias e Gestão de Não Conformidades
+                CondoSafe Inspector — Gestão de Segurança Condominial
               </p>
             </div>
           </div>
 
           <div className="report-box">
-            <strong>Relatório Técnico</strong>
+            <strong>RELATÓRIO TÉCNICO DE INSPEÇÃO</strong>
+            <br />
+            <small>Sistema de Gestão de Segurança Condominial</small>
+            <br />
             <br />
             Data: {new Date().toLocaleDateString()}
           </div>
+        </div>
+
+        <div className="report-info" style={{ marginTop: '18px' }}>
+          <p>
+            <strong>Finalidade:</strong> Avaliação das condições de segurança e conformidade do ambiente inspecionado.
+          </p>
+          <p>
+            <strong>Metodologia:</strong> Inspeção visual técnica baseada em checklist estruturado, com registro de não conformidades e definição de ações corretivas.
+          </p>
         </div>
 
         <hr />
@@ -123,10 +146,11 @@ export default function Relatorios() {
         <h2>1. Identificação do Relatório</h2>
 
         <div className="report-info">
-          <p><strong>Empresa/Sistema:</strong> Datainsight SST</p>
-          <p><strong>Tipo:</strong> Relatório de inspeção e acompanhamento</p>
+          <p><strong>Empresa/Sistema:</strong> Datainsight SST — CondoSafe Inspector</p>
+          <p><strong>Tipo:</strong> Relatório de inspeção, não conformidades e plano de ação</p>
+          <p><strong>Condomínio:</strong> {condominioNome}</p>
           <p><strong>Responsável pela inspeção:</strong> ______________________________</p>
-          <p><strong>Condomínio:</strong> {ncs[0]?.condominios?.[0]?.nome || 'Não informado'}</p>
+          <p><strong>Data de emissão:</strong> {new Date().toLocaleDateString()}</p>
         </div>
 
         <h2>2. Resumo Executivo</h2>
@@ -138,19 +162,31 @@ export default function Relatorios() {
           </div>
 
           <div>
+            <strong>{ncsAbertas}</strong>
+            <span>NCs Abertas</span>
+          </div>
+
+          <div>
             <strong>{planos.length}</strong>
             <span>Planos de Ação</span>
           </div>
 
           <div>
-            <strong>{ncs.filter((n) => n.status === 'aberta').length}</strong>
-            <span>NCs Abertas</span>
-          </div>
-
-          <div>
-            <strong>{planos.filter((p) => p.status === 'pendente').length}</strong>
+            <strong>{planosPendentes}</strong>
             <span>Planos Pendentes</span>
           </div>
+        </div>
+
+        <div className="report-info">
+          <p>
+            <strong>Situação geral:</strong>{' '}
+            {ncsAbertas > 0 || planosPendentes > 0
+              ? 'Existem pendências que exigem acompanhamento e tratativa.'
+              : 'Não há pendências críticas registradas no momento.'}
+          </p>
+          <p>
+            <strong>Planos concluídos:</strong> {planosConcluidos}
+          </p>
         </div>
 
         <h2>3. Não Conformidades Identificadas</h2>
@@ -160,17 +196,21 @@ export default function Relatorios() {
         ) : (
           ncs.map((nc, index) => (
             <div key={nc.id} className="report-item">
-              <h3>NC {index + 1} — {nc.item_checklist}</h3>
+              <h3 style={{ color: '#dc2626' }}>
+                NC {index + 1} — {nc.item_checklist}
+              </h3>
+
               <p><strong>Condomínio:</strong> {nc.condominios?.[0]?.nome || 'Não informado'}</p>
               <p><strong>Vistoria:</strong> {nc.vistorias?.[0]?.descricao || 'Não informada'}</p>
               <p><strong>Descrição:</strong> {nc.descricao || 'Sem descrição'}</p>
+              <p><strong>Classificação:</strong> Não conforme</p>
               <p><strong>Status:</strong> {formatarStatusNC(nc.status)}</p>
-              <p><strong>Data:</strong> {new Date(nc.created_at).toLocaleDateString()}</p>
+              <p><strong>Data do registro:</strong> {new Date(nc.created_at).toLocaleDateString()}</p>
             </div>
           ))
         )}
 
-        <h2>4. Planos de Ação</h2>
+        <h2>4. Planos de Ação Corretiva</h2>
 
         {planos.length === 0 ? (
           <p>Nenhum plano de ação registrado.</p>
@@ -178,19 +218,49 @@ export default function Relatorios() {
           planos.map((p, index) => (
             <div key={p.id} className="report-item">
               <h3>Ação {index + 1} — {p.acao}</h3>
-              <p><strong>NC relacionada:</strong> {p.nao_conformidades?.[0]?.item_checklist || 'Não informada'}</p>
+
+              <p>
+                <strong>NC relacionada:</strong>{' '}
+                {p.nao_conformidades?.[0]?.item_checklist || 'Não informada'}
+              </p>
               <p><strong>Responsável:</strong> {p.responsavel || 'Não informado'}</p>
-              <p><strong>Prazo:</strong> {p.prazo ? new Date(p.prazo).toLocaleDateString() : 'Sem prazo'}</p>
+              <p>
+                <strong>Prazo:</strong>{' '}
+                {p.prazo ? new Date(p.prazo).toLocaleDateString() : 'Sem prazo definido'}
+              </p>
               <p><strong>Status:</strong> {formatarStatusPlano(p.status)}</p>
             </div>
           ))
         )}
 
-        <h2>5. Conclusão</h2>
+        <h2>5. Recomendações Técnicas</h2>
+
+        <div className="report-info">
+          <p>
+            Recomenda-se que as não conformidades identificadas sejam tratadas com prioridade,
+            considerando a segurança dos usuários, a prevenção de acidentes e a manutenção das condições adequadas do ambiente.
+          </p>
+          <p>
+            Os planos de ação devem ser acompanhados periodicamente até sua conclusão,
+            com registro das evidências de correção e validação das medidas executadas.
+          </p>
+        </div>
+
+        <h2>6. Conclusão</h2>
 
         <p>
-          Este relatório apresenta o registro das não conformidades identificadas durante as vistorias,
-          bem como os respectivos planos de ação para controle, acompanhamento e correção das falhas.
+          Este relatório apresenta os registros técnicos das não conformidades identificadas durante as vistorias,
+          bem como os respectivos planos de ação para controle, acompanhamento e correção das falhas observadas.
+        </p>
+
+        <p>
+          As não conformidades identificadas devem ser tratadas com prioridade,
+          visando garantir a segurança dos usuários e a conformidade com normas aplicáveis.
+        </p>
+
+        <p>
+          Recomenda-se a execução das ações corretivas dentro dos prazos estabelecidos,
+          com acompanhamento contínuo.
         </p>
 
         <div className="signature-area">
@@ -206,7 +276,7 @@ export default function Relatorios() {
         </div>
 
         <footer className="report-footer">
-          Datainsight SST — Relatório gerado automaticamente pelo sistema
+          Datainsight SST — Relatório gerado automaticamente pelo CondoSafe Inspector
         </footer>
       </div>
     </>
