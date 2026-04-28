@@ -104,16 +104,20 @@ export default function Condominios() {
   return (
     <>
       <div className="header">
-        <h1>Condomínios</h1>
-        <p>Cadastro e gestão dos condomínios atendidos.</p>
+        <div className="premium-badge">CondoSafe Inspector</div>
+        <h1>Gestão de Condomínios</h1>
+        <p>Cadastro, organização e acompanhamento das unidades atendidas.</p>
       </div>
 
       <div className="card">
         <h3>{editandoId ? 'Editar Condomínio' : 'Cadastrar Condomínio'}</h3>
+        <p style={{ marginBottom: '12px', color: '#64748b' }}>
+          Informe os dados básicos do condomínio monitorado pelo sistema.
+        </p>
 
         <div className="form-grid">
           <input
-            placeholder="Nome"
+            placeholder="Nome do condomínio"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
           />
@@ -131,10 +135,8 @@ export default function Condominios() {
           />
         </div>
 
-        <br />
-
         <button onClick={salvarCondominio}>
-          {editandoId ? 'Atualizar' : 'Salvar'}
+          {editandoId ? 'Atualizar Condomínio' : 'Salvar Condomínio'}
         </button>
 
         {editandoId && (
@@ -145,39 +147,46 @@ export default function Condominios() {
       </div>
 
       <div className="card">
-        <h3>Condomínios cadastrados</h3>
+        <h3>Condomínios Cadastrados</h3>
+        <p style={{ marginBottom: '12px', color: '#64748b' }}>
+          Lista completa das unidades monitoradas pelo sistema.
+        </p>
 
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Cidade</th>
-              <th>Estado</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
+        {condominios.length === 0 ? (
+          <p>Nenhum condomínio cadastrado ainda.</p>
+        ) : (
+          <div className="table-wrapper">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Cidade</th>
+                  <th>Estado</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
 
-          <tbody>
-            {condominios.map((c) => (
-              <tr key={c.id}>
-                <td>{c.nome}</td>
-                <td>{c.cidade}</td>
-                <td>{c.estado}</td>
-                <td>
-                  <button onClick={() => editarCondominio(c)}>Editar</button>
-                  <button
-                    className="btn-danger"
-                    onClick={() => excluirCondominio(c.id)}
-                  >
-                    Excluir
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <br />
+              <tbody>
+                {condominios.map((c) => (
+                  <tr key={c.id}>
+                    <td>{c.nome}</td>
+                    <td>{c.cidade}</td>
+                    <td>{c.estado}</td>
+                    <td>
+                      <button onClick={() => editarCondominio(c)}>Editar</button>
+                      <button
+                        className="btn-danger"
+                        onClick={() => excluirCondominio(c.id)}
+                      >
+                        Excluir
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         <button className="btn-secondary" onClick={() => window.print()}>
           Imprimir
