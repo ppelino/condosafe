@@ -43,7 +43,7 @@ export default function Relatorios() {
     }
 
     const { data: dadosPlanos, error: erroPlanos } = await supabase
-      .from('planos_acao')
+      .from('plano_acao')
       .select(`
         id,
         acao,
