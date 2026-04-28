@@ -229,3 +229,53 @@ button:hover {
 .table td button:last-child:hover {
   background: #dc2626;
 }
+.main {
+  max-width: 1320px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.card {
+  margin-bottom: 24px;
+}
+
+.list-item {
+  align-items: center;
+  line-height: 1.5;
+}
+
+.list-item strong {
+  font-size: 15px;
+  color: #0f172a;
+}
+
+.list-item div:first-child {
+  flex: 1;
+}
+
+.list-item div:last-child {
+  min-width: 90px;
+  text-align: right;
+  font-weight: 700;
+}
+
+.header {
+  margin-bottom: 28px;
+}
+
+select,
+input {
+  font-size: 14px;
+  height: 44px;
+}
+
+.card p {
+  line-height: 1.5;
+}
+
+@media (min-width: 1200px) {
+  .main {
+    padding-left: 48px;
+    padding-right: 48px;
+  }
+}
