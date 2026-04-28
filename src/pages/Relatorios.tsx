@@ -3,9 +3,10 @@ return (
     <div className="header no-print">
       <div className="premium-badge">CondoSafe Inspector</div>
 
-      <h1>Relatório Técnico Premium</h1>
+      <h1>Relatório Técnico de Inspeção</h1>
       <p>
-        Documento gerado automaticamente com base nas vistorias, não conformidades e planos de ação.
+        Documento técnico gerado automaticamente com base nas vistorias,
+        não conformidades e planos de ação corretiva.
       </p>
 
       <br />
@@ -23,24 +24,31 @@ return (
 
           <div>
             <h1 style={{ margin: 0 }}>Datainsight SST</h1>
-            <small>CondoSafe Inspector — Sistema Profissional de Gestão Condominial</small>
+            <p style={{ margin: 0 }}>
+              CondoSafe Inspector — Gestão de Segurança Condominial
+            </p>
           </div>
         </div>
 
         <div className="report-box">
           <strong>RELATÓRIO TÉCNICO DE INSPEÇÃO</strong>
           <br />
-          <small>Segurança Condominial</small>
+          <small>Vistorias • Não Conformidades • Plano de Ação</small>
           <br />
           <br />
-          <strong>Data:</strong> {new Date().toLocaleDateString()}
+          <strong>Emissão:</strong> {new Date().toLocaleDateString()}
         </div>
       </div>
 
       <div className="report-info">
         <p>
-          Este relatório apresenta a análise técnica das condições observadas durante a vistoria,
-          incluindo não conformidades identificadas e respectivos planos de ação corretiva.
+          <strong>Finalidade:</strong> apresentar a análise técnica das condições
+          observadas durante a vistoria, incluindo não conformidades identificadas
+          e respectivos planos de ação corretiva.
+        </p>
+        <p>
+          <strong>Metodologia:</strong> inspeção visual técnica baseada em checklist
+          estruturado, registro de evidências e acompanhamento das ações corretivas.
         </p>
       </div>
 
@@ -50,7 +58,7 @@ return (
         <p><strong>Condomínio:</strong> {condominioNome}</p>
         <p><strong>Responsável pela vistoria:</strong> ____________________________</p>
         <p><strong>Data de emissão:</strong> {new Date().toLocaleDateString()}</p>
-        <p><strong>Tipo:</strong> Relatório de inspeção, não conformidades e plano de ação</p>
+        <p><strong>Tipo de documento:</strong> Relatório de inspeção, não conformidades e plano de ação</p>
       </div>
 
       <h2>2. Resumo Executivo</h2>
@@ -73,7 +81,7 @@ return (
 
         <div>
           <strong>{planosPendentes}</strong>
-          <span>Pendentes</span>
+          <span>Planos Pendentes</span>
         </div>
       </div>
 
@@ -81,7 +89,7 @@ return (
         <p>
           <strong>Situação geral:</strong>{' '}
           {ncsAbertas > 0 || planosPendentes > 0
-            ? 'Existem pendências que exigem acompanhamento e tratativa.'
+            ? 'Existem pendências que exigem acompanhamento, tratativa e controle dos prazos.'
             : 'Não há pendências críticas registradas no momento.'}
         </p>
         <p><strong>Planos concluídos:</strong> {planosConcluidos}</p>
@@ -90,7 +98,9 @@ return (
       <h2>3. Não Conformidades Identificadas</h2>
 
       {ncs.length === 0 ? (
-        <p>Nenhuma não conformidade registrada.</p>
+        <div className="report-info">
+          <p>Nenhuma não conformidade registrada.</p>
+        </div>
       ) : (
         ncs.map((nc, index) => (
           <div key={nc.id} className="report-item">
@@ -111,7 +121,9 @@ return (
       <h2>4. Planos de Ação Corretiva</h2>
 
       {planos.length === 0 ? (
-        <p>Nenhum plano de ação registrado.</p>
+        <div className="report-info">
+          <p>Nenhum plano de ação registrado.</p>
+        </div>
       ) : (
         planos.map((p, index) => (
           <div key={p.id} className="report-item">
@@ -136,7 +148,8 @@ return (
       <div className="report-info">
         <p>
           Recomenda-se que as não conformidades identificadas sejam tratadas com prioridade,
-          considerando a segurança dos usuários, a prevenção de acidentes e a manutenção das condições adequadas do ambiente.
+          considerando a segurança dos usuários, a prevenção de acidentes e a manutenção
+          das condições adequadas do ambiente.
         </p>
         <p>
           Os planos de ação devem ser acompanhados periodicamente até sua conclusão,
@@ -146,15 +159,17 @@ return (
 
       <h2>6. Conclusão</h2>
 
-      <p>
-        Este relatório apresenta os registros técnicos das não conformidades identificadas durante as vistorias,
-        bem como os respectivos planos de ação para controle, acompanhamento e correção das falhas observadas.
-      </p>
-
-      <p>
-        As não conformidades identificadas devem ser tratadas com prioridade,
-        visando garantir a segurança dos usuários e a conformidade com normas aplicáveis.
-      </p>
+      <div className="report-info">
+        <p>
+          Este relatório apresenta os registros técnicos das não conformidades identificadas
+          durante as vistorias, bem como os respectivos planos de ação para controle,
+          acompanhamento e correção das falhas observadas.
+        </p>
+        <p>
+          As pendências apontadas devem ser acompanhadas até sua regularização,
+          mantendo histórico técnico das ações executadas.
+        </p>
+      </div>
 
       <div className="signature-area">
         <div>
