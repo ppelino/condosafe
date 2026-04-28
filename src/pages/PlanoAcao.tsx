@@ -18,7 +18,7 @@ export default function PlanoAcao() {
 
   const carregarPlanos = async () => {
     const { data, error } = await supabase
-      .from('plano_acao') // ⚠️ CORRIGIDO (antes estava planos_acao)
+      .from('planos_acao')
       .select('*')
       .order('prazo', { ascending: true })
 
@@ -36,12 +36,12 @@ export default function PlanoAcao() {
       return
     }
 
-    const { error } = await supabase.from('plano_acao').insert([
+    const { error } = await supabase.from('planos_acao').insert([
       {
         acao,
         responsavel,
         prazo,
-        status,
+        status
       }
     ])
 
@@ -55,13 +55,12 @@ export default function PlanoAcao() {
     setResponsavel('')
     setPrazo('')
     setStatus('pendente')
-
     carregarPlanos()
   }
 
   const atualizarStatus = async (id: string, novoStatus: string) => {
     const { error } = await supabase
-      .from('plano_acao')
+      .from('planos_acao')
       .update({ status: novoStatus })
       .eq('id', id)
 
@@ -93,7 +92,6 @@ export default function PlanoAcao() {
         </p>
       </div>
 
-      {/* FORM */}
       <div className="card">
         <h3>Nova Ação Corretiva</h3>
 
@@ -124,7 +122,6 @@ export default function PlanoAcao() {
         <button onClick={salvarPlano}>Salvar Plano de Ação</button>
       </div>
 
-      {/* LISTA */}
       <div className="card">
         <h3>Ações Registradas ({planos.length})</h3>
 
