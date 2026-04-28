@@ -67,54 +67,69 @@ export default function NaoConformidades() {
     carregarNaoConformidades()
   }
 
+  const corStatus = (status: string) => {
+    if (status === 'aberta') return '#dc2626'
+    if (status === 'em andamento') return '#f59e0b'
+    return '#16a34a'
+  }
+
   return (
     <>
       <div className="header">
-        <h1>Não Conformidades</h1>
-        <p>Controle das irregularidades encontradas nas vistorias.</p>
+        <div className="premium-badge">CondoSafe Inspector</div>
+        <h1>Gestão de Não Conformidades</h1>
+        <p>
+          Acompanhamento técnico das irregularidades identificadas nas vistorias condominiais.
+        </p>
       </div>
 
       <div className="card">
-        <h3>Lista de Não Conformidades</h3>
+        <h3>Não Conformidades Registradas</h3>
+        <p style={{ marginBottom: '16px', color: '#64748b' }}>
+          Controle de ocorrências abertas, em andamento e concluídas para apoio ao plano de ação.
+        </p>
 
         {carregando ? (
-          <p>Carregando...</p>
+          <p>Carregando registros...</p>
         ) : naoConformidades.length === 0 ? (
           <p>Nenhuma não conformidade registrada ainda.</p>
         ) : (
           naoConformidades.map((nc) => (
-            <div key={nc.id} className="list-item">
+            <div
+              key={nc.id}
+              className="list-item"
+              style={{ borderLeftColor: corStatus(nc.status) }}
+            >
               <div>
                 <strong>{nc.item_checklist || 'Item não informado'}</strong>
                 <br />
 
                 <small>
-                  Condomínio: {nc.condominios?.[0]?.nome || 'Não informado'}
+                  <strong>Condomínio:</strong>{' '}
+                  {nc.condominios?.[0]?.nome || 'Não informado'}
                 </small>
                 <br />
 
                 <small>
-                  Vistoria: {nc.vistorias?.[0]?.descricao || 'Não informada'}
+                  <strong>Vistoria:</strong>{' '}
+                  {nc.vistorias?.[0]?.descricao || 'Não informada'}
                 </small>
                 <br /><br />
 
                 <span>{nc.descricao}</span>
                 <br />
 
-                <small>
-                  Criada em: {new Date(nc.created_at).toLocaleDateString()}
+                <small style={{ color: '#64748b' }}>
+                  Registrada em: {new Date(nc.created_at).toLocaleDateString()}
                 </small>
               </div>
 
               <div>
                 <strong
                   style={{
-                    color:
-                      nc.status === 'aberta'
-                        ? 'red'
-                        : nc.status === 'em andamento'
-                        ? 'orange'
-                        : 'green'
+                    color: corStatus(nc.status),
+                    textTransform: 'uppercase',
+                    fontSize: '13px'
                   }}
                 >
                   {nc.status}
