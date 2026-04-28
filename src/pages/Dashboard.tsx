@@ -13,17 +13,14 @@ export default function Dashboard() {
   const carregarIndicadores = async () => {
     const hoje = new Date().toISOString().split('T')[0]
 
-    // CONDOMÍNIOS
     const { count: countCondominios } = await supabase
       .from('condominios')
       .select('*', { count: 'exact', head: true })
 
-    // VISTORIAS
     const { count: countVistorias } = await supabase
       .from('vistorias')
       .select('*', { count: 'exact', head: true })
 
-    // NÃO CONFORMIDADES
     const { count: countNCs } = await supabase
       .from('nao_conformidades')
       .select('*', { count: 'exact', head: true })
@@ -33,7 +30,6 @@ export default function Dashboard() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'aberta')
 
-    // PLANOS
     const { count: countPlanos } = await supabase
       .from('plano_acao')
       .select('*', { count: 'exact', head: true })
@@ -64,52 +60,62 @@ export default function Dashboard() {
 
   return (
     <>
-      <div className="header">
-        <h1>Dashboard Executivo</h1>
-        <p>Visão geral do CondoSafe</p>
+      <div className="header premium-header">
+        <div className="premium-badge">CondoSafe Inspector</div>
+        <h1>Painel Executivo de Segurança Condominial</h1>
+        <p>
+          Controle técnico de vistorias, não conformidades e planos de ação corretiva.
+        </p>
       </div>
 
       <div className="cards">
 
-        <div className="card">
-          <div>Total Condomínios</div>
+        <div className="card premium-card">
+          <span className="card-label">Condomínios Monitorados</span>
           <div className="card-number">{totalCondominios}</div>
+          <small>Unidades cadastradas no sistema</small>
         </div>
 
-        <div className="card">
-          <div>Vistorias</div>
+        <div className="card premium-card">
+          <span className="card-label">Vistorias Realizadas</span>
           <div className="card-number">{totalVistorias}</div>
+          <small>Inspeções registradas</small>
         </div>
 
-        <div className="card">
-          <div>Não Conformidades</div>
+        <div className="card premium-card">
+          <span className="card-label">Não Conformidades Identificadas</span>
           <div className="card-number">{totalNCs}</div>
+          <small>Ocorrências técnicas apontadas</small>
         </div>
 
-        <div className="card">
-          <div>NCs Abertas</div>
+        <div className="card premium-card alert-card">
+          <span className="card-label">NCs Abertas</span>
           <div className="card-number" style={{ color: 'red' }}>
             {ncsAbertas}
           </div>
+          <small>Pendentes de tratativa</small>
         </div>
 
-        <div className="card">
-          <div>Planos de Ação</div>
+        <div className="card premium-card">
+          <span className="card-label">Planos de Ação</span>
           <div className="card-number">{totalPlanos}</div>
+          <small>Ações corretivas cadastradas</small>
         </div>
 
-        <div className="card">
-          <div>Planos Pendentes</div>
+        <div className="card premium-card warning-card">
+          <span className="card-label">Planos Pendentes</span>
           <div className="card-number" style={{ color: 'orange' }}>
             {planosPendentes}
           </div>
+          <small>Aguardando execução</small>
         </div>
 
-        <div className="card">
-          <div>Planos Atrasados</div>
+        <div className="card premium-card danger-card">
+          <span className="card-label">Planos Atrasados</span>
           <div className="card-number" style={{ color: 'red' }}>
             {planosAtrasados}
           </div>
+          <small>Exigem atenção imediata</small>
         </div>
 
       </div>
