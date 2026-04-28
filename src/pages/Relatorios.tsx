@@ -1,147 +1,284 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-type Condominio = {
-  id: string
-  nome: string
-}
-
 type NaoConformidade = {
   id: string
-  descricao: string
-  criticidade: string
+  item_checklist: string
+  descricao: string | null
   status: string
-  created_at?: string
-  condominio_id?: string
-  condominios?: {
-    nome: string
-  }[]
+  created_at: string
+  condominios?: { nome: string }[]
+  vistorias?: { descricao: string }[]
+}
+
+type PlanoAcao = {
+  id: string
+  acao: string
+  responsavel: string | null
+  prazo: string | null
+  status: string
 }
 
 export default function Relatorios() {
-  const [condominios, setCondominios] = useState<Condominio[]>([])
-  const [condominioId, setCondominioId] = useState('')
-  const [naoConformidades, setNaoConformidades] = useState<NaoConformidade[]>([])
-
-  const carregarCondominios = async () => {
-    const { data, error } = await supabase
-      .from('condominios')
-      .select('id, nome')
-      .order('nome', { ascending: true })
-
-    if (error) {
-      console.error('Erro ao carregar condomínios:', error)
-      return
-    }
-
-    setCondominios(data || [])
-  }
+  const [ncs, setNcs] = useState<NaoConformidade[]>([])
+  const [planos, setPlanos] = useState<PlanoAcao[]>([])
 
   const carregarRelatorio = async () => {
-    let query = supabase
+    const { data: dadosNCs, error: erroNCs } = await supabase
       .from('nao_conformidades')
       .select(`
         id,
+        item_checklist,
         descricao,
-        criticidade,
         status,
         created_at,
-        condominio_id,
-        condominios (
-          nome
-        )
+        condominios ( nome ),
+        vistorias ( descricao )
       `)
       .order('created_at', { ascending: false })
 
-    if (condominioId) {
-      query = query.eq('condominio_id', condominioId)
-    }
-
-    const { data, error } = await query
-
-    if (error) {
-      console.error('Erro ao carregar relatório:', error)
-      alert('Erro ao carregar relatório.')
+    if (erroNCs) {
+      alert('Erro ao carregar não conformidades: ' + erroNCs.message)
       return
     }
 
-    setNaoConformidades((data || []) as unknown as NaoConformidade[])
-  }
+    const { data: dadosPlanos, error: erroPlanos } = await supabase
+      .from('planos_acao')
+      .select(`
+        id,
+        acao,
+        responsavel,
+        prazo,
+        status
+      `)
+      .order('prazo', { ascending: true })
 
-  const imprimirRelatorio = () => {
-    window.print()
+    if (erroPlanos) {
+      alert('Erro ao carregar planos de ação: ' + erroPlanos.message)
+      return
+    }
+
+    setNcs((dadosNCs || []) as unknown as NaoConformidade[])
+    setPlanos((dadosPlanos || []) as PlanoAcao[])
   }
 
   useEffect(() => {
-    carregarCondominios()
     carregarRelatorio()
   }, [])
 
-  useEffect(() => {
-    carregarRelatorio()
-  }, [condominioId])
+  const imprimirPDF = () => {
+    window.print()
+  }
+
+  const formatarStatusNC = (status: string) => {
+    if (status === 'aberta') return 'Aberta'
+    if (status === 'andamento') return 'Em andamento'
+    if (status === 'em andamento') return 'Em andamento'
+    if (status === 'concluida') return 'Concluída'
+    return status
+  }
+
+  const formatarStatusPlano = (status: string) => {
+    if (status === 'pendente') return 'Pendente'
+    if (status === 'andamento') return 'Em andamento'
+    if (status === 'em andamento') return 'Em andamento'
+    if (status === 'concluida') return 'Concluída'
+    if (status === 'concluido') return 'Concluído'
+    return status
+  }
+
+  const ncsAbertas = ncs.filter((n) => n.status === 'aberta').length
+  const planosPendentes = planos.filter((p) => p.status === 'pendente').length
+  const planosConcluidos = planos.filter(
+    (p) => p.status === 'concluida' || p.status === 'concluido'
+  ).length
+
+  const condominioNome = ncs[0]?.condominios?.[0]?.nome || 'Não informado'
 
   return (
     <>
       <div className="header no-print">
         <div className="premium-badge">CondoSafe Inspector</div>
-        <h1>Relatórios Técnicos</h1>
-        <p>Geração de relatório com não conformidades por condomínio.</p>
-      </div>
 
-      <div className="card no-print">
-        <h3>Filtro do Relatório</h3>
+        <h1>Relatório Técnico de Inspeção</h1>
+        <p>
+          Documento técnico gerado automaticamente com base nas vistorias,
+          não conformidades e planos de ação corretiva.
+        </p>
 
-        <select value={condominioId} onChange={(e) => setCondominioId(e.target.value)}>
-          <option value="">Todos os condomínios</option>
-          {condominios.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nome}
-            </option>
-          ))}
-        </select>
-
-        <button onClick={imprimirRelatorio}>Imprimir / Salvar PDF</button>
+        <br />
+        <button onClick={imprimirPDF}>Gerar PDF / Imprimir</button>
       </div>
 
       <div className="card report-area">
         <div className="report-header">
-          <h2>Relatório Técnico de Vistoria</h2>
-          <p>CondoSafe Inspector — Gestão de Vistorias Técnicas</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <img
+              src="/logo.png"
+              alt="Datainsight"
+              style={{ height: '60px', objectFit: 'contain' }}
+            />
+
+            <div>
+              <h1 style={{ margin: 0 }}>Datainsight SST</h1>
+              <p style={{ margin: 0 }}>
+                CondoSafe Inspector — Gestão de Segurança Condominial
+              </p>
+            </div>
+          </div>
+
+          <div className="report-box">
+            <strong>RELATÓRIO TÉCNICO DE INSPEÇÃO</strong>
+            <br />
+            <small>Vistorias • Não Conformidades • Plano de Ação</small>
+            <br />
+            <br />
+            <strong>Emissão:</strong> {new Date().toLocaleDateString()}
+          </div>
         </div>
 
-        <hr />
+        <div className="report-info">
+          <p>
+            <strong>Finalidade:</strong> apresentar a análise técnica das condições
+            observadas durante a vistoria, incluindo não conformidades identificadas
+            e respectivos planos de ação corretiva.
+          </p>
+          <p>
+            <strong>Metodologia:</strong> inspeção visual técnica baseada em checklist
+            estruturado, registro de evidências e acompanhamento das ações corretivas.
+          </p>
+        </div>
 
-        {naoConformidades.length === 0 ? (
-          <p>Nenhuma não conformidade encontrada para o filtro selecionado.</p>
+        <h2>1. Identificação do Relatório</h2>
+
+        <div className="report-info">
+          <p><strong>Condomínio:</strong> {condominioNome}</p>
+          <p><strong>Responsável pela vistoria:</strong> ____________________________</p>
+          <p><strong>Data de emissão:</strong> {new Date().toLocaleDateString()}</p>
+          <p><strong>Tipo de documento:</strong> Relatório de inspeção, não conformidades e plano de ação</p>
+        </div>
+
+        <h2>2. Resumo Executivo</h2>
+
+        <div className="report-summary">
+          <div>
+            <strong>{ncs.length}</strong>
+            <span>Não Conformidades</span>
+          </div>
+
+          <div>
+            <strong>{ncsAbertas}</strong>
+            <span>NCs Abertas</span>
+          </div>
+
+          <div>
+            <strong>{planos.length}</strong>
+            <span>Planos de Ação</span>
+          </div>
+
+          <div>
+            <strong>{planosPendentes}</strong>
+            <span>Planos Pendentes</span>
+          </div>
+        </div>
+
+        <div className="report-info">
+          <p>
+            <strong>Situação geral:</strong>{' '}
+            {ncsAbertas > 0 || planosPendentes > 0
+              ? 'Existem pendências que exigem acompanhamento, tratativa e controle dos prazos.'
+              : 'Não há pendências críticas registradas no momento.'}
+          </p>
+          <p><strong>Planos concluídos:</strong> {planosConcluidos}</p>
+        </div>
+
+        <h2>3. Não Conformidades Identificadas</h2>
+
+        {ncs.length === 0 ? (
+          <div className="report-info">
+            <p>Nenhuma não conformidade registrada.</p>
+          </div>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Condomínio</th>
-                <th>Descrição</th>
-                <th>Criticidade</th>
-                <th>Status</th>
-                <th>Data</th>
-              </tr>
-            </thead>
-            <tbody>
-              {naoConformidades.map((nc) => (
-                <tr key={nc.id}>
-                  <td>{nc.condominios?.[0]?.nome || '-'}</td>
-                  <td>{nc.descricao}</td>
-                  <td>{nc.criticidade}</td>
-                  <td>{nc.status}</td>
-                  <td>
-                    {nc.created_at
-                      ? new Date(nc.created_at).toLocaleDateString('pt-BR')
-                      : '-'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          ncs.map((nc, index) => (
+            <div key={nc.id} className="report-item">
+              <h3 style={{ color: '#dc2626' }}>
+                NC {index + 1} — {nc.item_checklist}
+              </h3>
+
+              <p><strong>Condomínio:</strong> {nc.condominios?.[0]?.nome || 'Não informado'}</p>
+              <p><strong>Vistoria:</strong> {nc.vistorias?.[0]?.descricao || 'Não informada'}</p>
+              <p><strong>Descrição:</strong> {nc.descricao || 'Sem descrição'}</p>
+              <p><strong>Classificação:</strong> Não conforme</p>
+              <p><strong>Status:</strong> {formatarStatusNC(nc.status)}</p>
+              <p><strong>Data do registro:</strong> {new Date(nc.created_at).toLocaleDateString()}</p>
+            </div>
+          ))
         )}
+
+        <h2>4. Planos de Ação Corretiva</h2>
+
+        {planos.length === 0 ? (
+          <div className="report-info">
+            <p>Nenhum plano de ação registrado.</p>
+          </div>
+        ) : (
+          planos.map((p, index) => (
+            <div key={p.id} className="report-item">
+              <h3>Ação {index + 1} — {p.acao}</h3>
+
+              <p><strong>Responsável:</strong> {p.responsavel || 'Não informado'}</p>
+              <p>
+                <strong>Prazo:</strong>{' '}
+                {p.prazo ? new Date(p.prazo).toLocaleDateString() : 'Sem prazo definido'}
+              </p>
+              <p><strong>Status:</strong> {formatarStatusPlano(p.status)}</p>
+            </div>
+          ))
+        )}
+
+        <h2>5. Recomendações Técnicas</h2>
+
+        <div className="report-info">
+          <p>
+            Recomenda-se que as não conformidades identificadas sejam tratadas com prioridade,
+            considerando a segurança dos usuários, a prevenção de acidentes e a manutenção
+            das condições adequadas do ambiente.
+          </p>
+          <p>
+            Os planos de ação devem ser acompanhados periodicamente até sua conclusão,
+            com registro das evidências de correção e validação das medidas executadas.
+          </p>
+        </div>
+
+        <h2>6. Conclusão</h2>
+
+        <div className="report-info">
+          <p>
+            Este relatório apresenta os registros técnicos das não conformidades identificadas
+            durante as vistorias, bem como os respectivos planos de ação para controle,
+            acompanhamento e correção das falhas observadas.
+          </p>
+          <p>
+            As pendências apontadas devem ser acompanhadas até sua regularização,
+            mantendo histórico técnico das ações executadas.
+          </p>
+        </div>
+
+        <div className="signature-area">
+          <div>
+            <p>________________________________________</p>
+            <p>Responsável Técnico</p>
+          </div>
+
+          <div>
+            <p>________________________________________</p>
+            <p>Representante do Condomínio</p>
+          </div>
+        </div>
+
+        <footer className="report-footer">
+          Datainsight SST — Relatório gerado automaticamente pelo CondoSafe Inspector
+        </footer>
       </div>
     </>
   )
