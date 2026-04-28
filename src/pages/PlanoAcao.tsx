@@ -7,7 +7,6 @@ type Plano = {
   responsavel: string
   prazo: string
   status: string
-  nao_conformidade_id?: string
 }
 
 export default function PlanoAcao() {
@@ -19,7 +18,7 @@ export default function PlanoAcao() {
 
   const carregarPlanos = async () => {
     const { data, error } = await supabase
-      .from('planos_acao')
+      .from('plano_acao') // ⚠️ CORRIGIDO (antes estava planos_acao)
       .select('*')
       .order('prazo', { ascending: true })
 
@@ -37,12 +36,14 @@ export default function PlanoAcao() {
       return
     }
 
-    const { error } = await supabase.from('planos_acao').insert({
-      acao,
-      responsavel,
-      prazo,
-      status,
-    })
+    const { error } = await supabase.from('plano_acao').insert([
+      {
+        acao,
+        responsavel,
+        prazo,
+        status,
+      }
+    ])
 
     if (error) {
       console.error('Erro ao salvar plano:', error)
@@ -54,12 +55,13 @@ export default function PlanoAcao() {
     setResponsavel('')
     setPrazo('')
     setStatus('pendente')
+
     carregarPlanos()
   }
 
   const atualizarStatus = async (id: string, novoStatus: string) => {
     const { error } = await supabase
-      .from('planos_acao')
+      .from('plano_acao')
       .update({ status: novoStatus })
       .eq('id', id)
 
@@ -71,6 +73,12 @@ export default function PlanoAcao() {
     carregarPlanos()
   }
 
+  const corStatus = (status: string) => {
+    if (status === 'pendente') return '#dc2626'
+    if (status === 'andamento') return '#f59e0b'
+    return '#16a34a'
+  }
+
   useEffect(() => {
     carregarPlanos()
   }, [])
@@ -79,15 +87,18 @@ export default function PlanoAcao() {
     <>
       <div className="header">
         <div className="premium-badge">CondoSafe Inspector</div>
-        <h1>Plano de Ação</h1>
-        <p>Controle das ações corretivas geradas a partir das vistorias técnicas.</p>
+        <h1>Plano de Ação Corretiva</h1>
+        <p>
+          Controle e acompanhamento das ações corretivas geradas a partir das vistorias.
+        </p>
       </div>
 
+      {/* FORM */}
       <div className="card">
         <h3>Nova Ação Corretiva</h3>
 
         <input
-          placeholder="Ação corretiva"
+          placeholder="Descreva a ação corretiva"
           value={acao}
           onChange={(e) => setAcao(e.target.value)}
         />
@@ -105,51 +116,68 @@ export default function PlanoAcao() {
         />
 
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="pendente">Pendente</option>
-          <option value="andamento">Em andamento</option>
-          <option value="concluida">Concluída</option>
+          <option value="pendente">🔴 Pendente</option>
+          <option value="andamento">🟠 Em andamento</option>
+          <option value="concluida">🟢 Concluída</option>
         </select>
 
         <button onClick={salvarPlano}>Salvar Plano de Ação</button>
       </div>
 
+      {/* LISTA */}
       <div className="card">
-        <h3>Ações Registradas</h3>
+        <h3>Ações Registradas ({planos.length})</h3>
 
         {planos.length === 0 ? (
           <p>Nenhuma ação registrada.</p>
         ) : (
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Ação</th>
-                  <th>Responsável</th>
-                  <th>Prazo</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {planos.map((p) => (
-                  <tr key={p.id}>
-                    <td>{p.acao}</td>
-                    <td>{p.responsavel}</td>
-                    <td>{p.prazo}</td>
-                    <td>
-                      <select
-                        value={p.status}
-                        onChange={(e) => atualizarStatus(p.id, e.target.value)}
-                      >
-                        <option value="pendente">Pendente</option>
-                        <option value="andamento">Em andamento</option>
-                        <option value="concluida">Concluída</option>
-                      </select>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          planos.map((p) => (
+            <div
+              key={p.id}
+              className="list-item"
+              style={{ borderLeftColor: corStatus(p.status) }}
+            >
+              <div>
+                <strong>{p.acao}</strong>
+                <br />
+
+                <small>
+                  <strong>Responsável:</strong> {p.responsavel}
+                </small>
+                <br />
+
+                <small>
+                  <strong>Prazo:</strong>{' '}
+                  {p.prazo
+                    ? new Date(p.prazo).toLocaleDateString()
+                    : 'Não definido'}
+                </small>
+              </div>
+
+              <div>
+                <strong
+                  style={{
+                    color: corStatus(p.status),
+                    textTransform: 'uppercase',
+                    fontSize: '13px'
+                  }}
+                >
+                  {p.status}
+                </strong>
+
+                <br /><br />
+
+                <select
+                  value={p.status}
+                  onChange={(e) => atualizarStatus(p.id, e.target.value)}
+                >
+                  <option value="pendente">Pendente</option>
+                  <option value="andamento">Em andamento</option>
+                  <option value="concluida">Concluída</option>
+                </select>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </>
