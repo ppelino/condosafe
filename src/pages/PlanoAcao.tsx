@@ -1,123 +1,157 @@
-return (
-  <>
-    <div className="header">
-      <div className="premium-badge">CondoSafe Inspector</div>
-      <h1>Gestão de Plano de Ação Corretiva</h1>
-      <p>
-        Definição, acompanhamento e controle das ações corretivas vinculadas às não conformidades identificadas.
-      </p>
-    </div>
+import { useEffect, useState } from 'react'
+import { supabase } from '../lib/supabase'
 
-    {/* NOVO PLANO */}
-    <div className="card">
-      <h3>Registrar Ação Corretiva</h3>
-      <p style={{ marginBottom: '12px', color: '#64748b' }}>
-        Vincule uma ação a uma não conformidade e defina responsável e prazo para resolução.
-      </p>
+type Plano = {
+  id: string
+  acao: string
+  responsavel: string
+  prazo: string
+  status: string
+  nao_conformidade_id?: string
+}
 
-      <select
-        value={naoConformidadeId}
-        onChange={(e) => setNaoConformidadeId(e.target.value)}
-      >
-        <option value="">Selecione a não conformidade</option>
-        {ncs.map((nc) => (
-          <option key={nc.id} value={nc.id}>
-            {nc.item_checklist}
-          </option>
-        ))}
-      </select>
+export default function PlanoAcao() {
+  const [planos, setPlanos] = useState<Plano[]>([])
+  const [acao, setAcao] = useState('')
+  const [responsavel, setResponsavel] = useState('')
+  const [prazo, setPrazo] = useState('')
+  const [status, setStatus] = useState('pendente')
 
-      <input
-        placeholder="Descreva a ação corretiva (ex: Substituição de extintores vencidos)"
-        value={acao}
-        onChange={(e) => setAcao(e.target.value)}
-      />
+  const carregarPlanos = async () => {
+    const { data, error } = await supabase
+      .from('planos_acao')
+      .select('*')
+      .order('prazo', { ascending: true })
 
-      <input
-        placeholder="Responsável pela execução"
-        value={responsavel}
-        onChange={(e) => setResponsavel(e.target.value)}
-      />
+    if (error) {
+      console.error('Erro ao carregar plano de ação:', error)
+      return
+    }
 
-      <input
-        type="date"
-        value={prazo}
-        onChange={(e) => setPrazo(e.target.value)}
-      />
+    setPlanos(data || [])
+  }
 
-      <button onClick={salvarPlano}>Salvar Plano de Ação</button>
-    </div>
+  const salvarPlano = async () => {
+    if (!acao || !responsavel || !prazo) {
+      alert('Preencha ação, responsável e prazo.')
+      return
+    }
 
-    {/* LISTA */}
-    <div className="card">
-      <h3>Planos de Ação ({planos.length})</h3>
-      <p style={{ marginBottom: '12px', color: '#64748b' }}>
-        Monitoramento das ações corretivas com status e prazos definidos.
-      </p>
+    const { error } = await supabase.from('planos_acao').insert({
+      acao,
+      responsavel,
+      prazo,
+      status,
+    })
 
-      {planos.length === 0 ? (
-        <p>Nenhum plano de ação registrado ainda.</p>
-      ) : (
-        planos.map((p) => (
-          <div
-            key={p.id}
-            className="list-item"
-            style={{ borderLeftColor: corStatus(p.status) }}
-          >
-            <div>
-              <strong>{p.acao}</strong>
-              <br />
+    if (error) {
+      console.error('Erro ao salvar plano:', error)
+      alert('Erro ao salvar plano de ação.')
+      return
+    }
 
-              <small>
-                <strong>Não Conformidade:</strong>{' '}
-                {p.nao_conformidades?.[0]?.item_checklist || 'Não informada'}
-              </small>
-              <br />
+    setAcao('')
+    setResponsavel('')
+    setPrazo('')
+    setStatus('pendente')
+    carregarPlanos()
+  }
 
-              <small>
-                <strong>Responsável:</strong>{' '}
-                {p.responsavel || 'Não informado'}
-              </small>
-              <br />
+  const atualizarStatus = async (id: string, novoStatus: string) => {
+    const { error } = await supabase
+      .from('planos_acao')
+      .update({ status: novoStatus })
+      .eq('id', id)
 
-              <small>
-                <strong>Prazo:</strong>{' '}
-                {p.prazo
-                  ? new Date(p.prazo).toLocaleDateString()
-                  : 'Sem prazo definido'}
-              </small>
-            </div>
+    if (error) {
+      console.error('Erro ao atualizar status:', error)
+      return
+    }
 
-            <div>
-              <strong
-                style={{
-                  color: corStatus(p.status),
-                  fontSize: '13px',
-                  textTransform: 'uppercase'
-                }}
-              >
-                {formatarStatus(p.status)}
-              </strong>
+    carregarPlanos()
+  }
 
-              <br /><br />
+  useEffect(() => {
+    carregarPlanos()
+  }, [])
 
-              <select
-                value={p.status}
-                onChange={(e) =>
-                  atualizarStatus(
-                    p.id,
-                    e.target.value as 'pendente' | 'andamento' | 'concluido'
-                  )
-                }
-              >
-                <option value="pendente">🔴 Pendente</option>
-                <option value="andamento">🟠 Em andamento</option>
-                <option value="concluido">🟢 Concluído</option>
-              </select>
-            </div>
+  return (
+    <>
+      <div className="header">
+        <div className="premium-badge">CondoSafe Inspector</div>
+        <h1>Plano de Ação</h1>
+        <p>Controle das ações corretivas geradas a partir das vistorias técnicas.</p>
+      </div>
+
+      <div className="card">
+        <h3>Nova Ação Corretiva</h3>
+
+        <input
+          placeholder="Ação corretiva"
+          value={acao}
+          onChange={(e) => setAcao(e.target.value)}
+        />
+
+        <input
+          placeholder="Responsável"
+          value={responsavel}
+          onChange={(e) => setResponsavel(e.target.value)}
+        />
+
+        <input
+          type="date"
+          value={prazo}
+          onChange={(e) => setPrazo(e.target.value)}
+        />
+
+        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="pendente">Pendente</option>
+          <option value="andamento">Em andamento</option>
+          <option value="concluida">Concluída</option>
+        </select>
+
+        <button onClick={salvarPlano}>Salvar Plano de Ação</button>
+      </div>
+
+      <div className="card">
+        <h3>Ações Registradas</h3>
+
+        {planos.length === 0 ? (
+          <p>Nenhuma ação registrada.</p>
+        ) : (
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ação</th>
+                  <th>Responsável</th>
+                  <th>Prazo</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {planos.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.acao}</td>
+                    <td>{p.responsavel}</td>
+                    <td>{p.prazo}</td>
+                    <td>
+                      <select
+                        value={p.status}
+                        onChange={(e) => atualizarStatus(p.id, e.target.value)}
+                      >
+                        <option value="pendente">Pendente</option>
+                        <option value="andamento">Em andamento</option>
+                        <option value="concluida">Concluída</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))
-      )}
-    </div>
-  </>
-)
+        )}
+      </div>
+    </>
+  )
+}
