@@ -15,7 +15,7 @@ type NaoConformidade = {
   condominio_id?: string
   condominios?: {
     nome: string
-  }
+  }[]
 }
 
 export default function Relatorios() {
@@ -65,7 +65,7 @@ export default function Relatorios() {
       return
     }
 
-    setNaoConformidades((data || []) as NaoConformidade[])
+    setNaoConformidades((data || []) as unknown as NaoConformidade[])
   }
 
   const imprimirRelatorio = () => {
@@ -128,7 +128,7 @@ export default function Relatorios() {
             <tbody>
               {naoConformidades.map((nc) => (
                 <tr key={nc.id}>
-                  <td>{nc.condominios?.nome || '-'}</td>
+                  <td>{nc.condominios?.[0]?.nome || '-'}</td>
                   <td>{nc.descricao}</td>
                   <td>{nc.criticidade}</td>
                   <td>{nc.status}</td>
