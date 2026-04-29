@@ -18,7 +18,7 @@ export default function PlanoAcao() {
 
   const carregarPlanos = async () => {
     const { data, error } = await supabase
-      .from('planos_acao')
+      .from('plano_acao')
       .select('*')
       .order('prazo', { ascending: true })
 
@@ -36,7 +36,7 @@ export default function PlanoAcao() {
       return
     }
 
-    const { error } = await supabase.from('planos_acao').insert([
+    const { error } = await supabase.from('plano_acao').insert([
       {
         acao,
         responsavel,
@@ -60,7 +60,7 @@ export default function PlanoAcao() {
 
   const atualizarStatus = async (id: string, novoStatus: string) => {
     const { error } = await supabase
-      .from('planos_acao')
+      .from('plano_acao')
       .update({ status: novoStatus })
       .eq('id', id)
 
