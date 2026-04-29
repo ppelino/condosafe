@@ -7,12 +7,14 @@ type NaoConformidade = {
   status: string
   item_checklist: string | null
   created_at: string
+
   condominios?: {
     nome: string
-  }[]
+  } | null
+
   vistorias?: {
     descricao: string
-  }[]
+  } | null
 }
 
 export default function NaoConformidades() {
@@ -30,10 +32,10 @@ export default function NaoConformidades() {
         status,
         item_checklist,
         created_at,
-        condominios (
+        condominios:condominio_id (
           nome
         ),
-        vistorias (
+        vistorias:vistoria_id (
           descricao
         )
       `)
@@ -45,7 +47,7 @@ export default function NaoConformidades() {
       return
     }
 
-    setNaoConformidades((data || []) as unknown as NaoConformidade[])
+    setNaoConformidades(data || [])
     setCarregando(false)
   }
 
@@ -68,13 +70,16 @@ export default function NaoConformidades() {
   }
 
   const corStatus = (status: string) => {
-    if (status === 'aberta') return '#dc2626'
-    if (status === 'em andamento') return '#f59e0b'
+    const s = status.toLowerCase()
+
+    if (s === 'aberta') return '#dc2626'
+    if (s === 'em andamento') return '#f59e0b'
     return '#16a34a'
   }
 
   return (
     <>
+      {/* HEADER */}
       <div className="header">
         <div className="premium-badge">CondoSafe Inspector</div>
         <h1>Gestão de Não Conformidades</h1>
@@ -83,8 +88,10 @@ export default function NaoConformidades() {
         </p>
       </div>
 
+      {/* LISTA */}
       <div className="card">
         <h3>Não Conformidades Registradas</h3>
+
         <p style={{ marginBottom: '16px', color: '#64748b' }}>
           Controle de ocorrências abertas, em andamento e concluídas para apoio ao plano de ação.
         </p>
@@ -100,19 +107,20 @@ export default function NaoConformidades() {
               className="list-item"
               style={{ borderLeftColor: corStatus(nc.status) }}
             >
+              {/* LADO ESQUERDO */}
               <div>
                 <strong>{nc.item_checklist || 'Item não informado'}</strong>
                 <br />
 
                 <small>
                   <strong>Condomínio:</strong>{' '}
-                  {nc.condominios?.[0]?.nome || 'Não informado'}
+                  {nc.condominios?.nome || 'Não informado'}
                 </small>
                 <br />
 
                 <small>
                   <strong>Vistoria:</strong>{' '}
-                  {nc.vistorias?.[0]?.descricao || 'Não informada'}
+                  {nc.vistorias?.descricao || 'Não informada'}
                 </small>
                 <br /><br />
 
@@ -120,10 +128,12 @@ export default function NaoConformidades() {
                 <br />
 
                 <small style={{ color: '#64748b' }}>
-                  Registrada em: {new Date(nc.created_at).toLocaleDateString()}
+                  Registrada em:{' '}
+                  {new Date(nc.created_at).toLocaleDateString()}
                 </small>
               </div>
 
+              {/* LADO DIREITO */}
               <div>
                 <strong
                   style={{
@@ -139,7 +149,9 @@ export default function NaoConformidades() {
 
                 <select
                   value={nc.status}
-                  onChange={(e) => atualizarStatus(nc.id, e.target.value)}
+                  onChange={(e) =>
+                    atualizarStatus(nc.id, e.target.value)
+                  }
                 >
                   <option value="aberta">Aberta</option>
                   <option value="em andamento">Em andamento</option>
