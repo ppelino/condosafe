@@ -9,49 +9,57 @@ export default function Dashboard() {
   const [totalPlanos, setTotalPlanos] = useState(0)
   const [planosPendentes, setPlanosPendentes] = useState(0)
   const [planosAtrasados, setPlanosAtrasados] = useState(0)
+  const [taxaConformidade, setTaxaConformidade] = useState(0)
 
   const carregarIndicadores = async () => {
     const hoje = new Date().toISOString().split('T')[0]
 
-    const { count: countCondominios } = await supabase
+    const { count: condominios } = await supabase
       .from('condominios')
       .select('*', { count: 'exact', head: true })
 
-    const { count: countVistorias } = await supabase
+    const { count: vistorias } = await supabase
       .from('vistorias')
       .select('*', { count: 'exact', head: true })
 
-    const { count: countNCs } = await supabase
+    const { count: ncs } = await supabase
       .from('nao_conformidades')
       .select('*', { count: 'exact', head: true })
 
-    const { count: countNCsAbertas } = await supabase
+    const { count: abertas } = await supabase
       .from('nao_conformidades')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'aberta')
 
-    const { count: countPlanos } = await supabase
+    const { count: planos } = await supabase
       .from('plano_acao')
       .select('*', { count: 'exact', head: true })
 
-    const { count: countPlanosPendentes } = await supabase
+    const { count: pendentes } = await supabase
       .from('plano_acao')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pendente')
 
-    const { count: countPlanosAtrasados } = await supabase
+    const { count: atrasados } = await supabase
       .from('plano_acao')
       .select('*', { count: 'exact', head: true })
       .lt('prazo', hoje)
-      .neq('status', 'concluido')
+      .neq('status', 'concluida')
 
-    setTotalCondominios(countCondominios || 0)
-    setTotalVistorias(countVistorias || 0)
-    setTotalNCs(countNCs || 0)
-    setNcsAbertas(countNCsAbertas || 0)
-    setTotalPlanos(countPlanos || 0)
-    setPlanosPendentes(countPlanosPendentes || 0)
-    setPlanosAtrasados(countPlanosAtrasados || 0)
+    setTotalCondominios(condominios || 0)
+    setTotalVistorias(vistorias || 0)
+    setTotalNCs(ncs || 0)
+    setNcsAbertas(abertas || 0)
+    setTotalPlanos(planos || 0)
+    setPlanosPendentes(pendentes || 0)
+    setPlanosAtrasados(atrasados || 0)
+
+    // 📊 Taxa de conformidade
+    if (ncs && abertas !== null) {
+      const conformes = ncs - abertas
+      const taxa = ncs > 0 ? (conformes / ncs) * 100 : 100
+      setTaxaConformidade(Number(taxa.toFixed(1)))
+    }
   }
 
   useEffect(() => {
@@ -62,30 +70,25 @@ export default function Dashboard() {
     <>
       <div className="header premium-header">
         <div className="premium-badge">CondoSafe Inspector</div>
-        <h1>Painel Executivo de Segurança Condominial</h1>
-        <p>
-          Controle técnico de vistorias, não conformidades e planos de ação corretiva.
-        </p>
+        <h1>Painel Executivo de Segurança</h1>
+        <p>Visão estratégica da gestão de riscos e conformidade.</p>
       </div>
 
       <div className="cards">
 
         <div className="card premium-card">
-          <span className="card-label">Condomínios Monitorados</span>
+          <span className="card-label">Condomínios</span>
           <div className="card-number">{totalCondominios}</div>
-          <small>Unidades cadastradas no sistema</small>
         </div>
 
         <div className="card premium-card">
-          <span className="card-label">Vistorias Realizadas</span>
+          <span className="card-label">Vistorias</span>
           <div className="card-number">{totalVistorias}</div>
-          <small>Inspeções registradas</small>
         </div>
 
         <div className="card premium-card">
-          <span className="card-label">Não Conformidades Identificadas</span>
+          <span className="card-label">Não Conformidades</span>
           <div className="card-number">{totalNCs}</div>
-          <small>Ocorrências técnicas apontadas</small>
         </div>
 
         <div className="card premium-card alert-card">
@@ -93,29 +96,32 @@ export default function Dashboard() {
           <div className="card-number" style={{ color: 'red' }}>
             {ncsAbertas}
           </div>
-          <small>Pendentes de tratativa</small>
         </div>
 
         <div className="card premium-card">
           <span className="card-label">Planos de Ação</span>
           <div className="card-number">{totalPlanos}</div>
-          <small>Ações corretivas cadastradas</small>
         </div>
 
         <div className="card premium-card warning-card">
-          <span className="card-label">Planos Pendentes</span>
+          <span className="card-label">Pendentes</span>
           <div className="card-number" style={{ color: 'orange' }}>
             {planosPendentes}
           </div>
-          <small>Aguardando execução</small>
         </div>
 
         <div className="card premium-card danger-card">
-          <span className="card-label">Planos Atrasados</span>
+          <span className="card-label">Atrasados</span>
           <div className="card-number" style={{ color: 'red' }}>
             {planosAtrasados}
           </div>
-          <small>Exigem atenção imediata</small>
+        </div>
+
+        <div className="card premium-card">
+          <span className="card-label">Conformidade (%)</span>
+          <div className="card-number" style={{ color: '#16a34a' }}>
+            {taxaConformidade}%
+          </div>
         </div>
 
       </div>
