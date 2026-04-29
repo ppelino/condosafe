@@ -11,9 +11,9 @@ type Vistoria = {
   descricao: string
   data: string
   condominio_id: string
-  condominios?: {
+  condominio?: {
     nome: string
-  }[]
+  } | null
 }
 
 type ChecklistResposta = {
@@ -60,7 +60,7 @@ export default function Vistorias() {
         descricao,
         data,
         condominio_id,
-        condominios (
+        condominio:condominios (
           nome
         )
       `)
@@ -218,7 +218,7 @@ export default function Vistorias() {
         </select>
 
         <input
-          placeholder="Descrição da vistoria (ex: Inspeção mensal de segurança)"
+          placeholder="Descrição da vistoria"
           value={descricao}
           onChange={(e) => setDescricao(e.target.value)}
         />
@@ -228,9 +228,6 @@ export default function Vistorias() {
 
       <div className="card">
         <h3>Histórico de Vistorias</h3>
-        <p style={{ marginBottom: '12px', color: '#64748b' }}>
-          Lista de inspeções realizadas nos condomínios cadastrados.
-        </p>
 
         {vistorias.length === 0 ? (
           <p>Nenhuma vistoria registrada ainda.</p>
@@ -238,7 +235,7 @@ export default function Vistorias() {
           vistorias.map((v) => (
             <div key={v.id} className="list-item">
               <div>
-                <strong>{v.condominios?.[0]?.nome || 'Condomínio não informado'}</strong>
+                <strong>{v.condominio?.nome || 'Condomínio não informado'}</strong>
                 <br />
                 {v.descricao}
               </div>
@@ -253,11 +250,6 @@ export default function Vistorias() {
 
       <div className="card">
         <h3>Checklist Técnico da Vistoria</h3>
-        <p style={{ marginBottom: '12px', color: '#64748b' }}>
-          Registre os itens verificados durante a inspeção.
-          Itens com <strong style={{ color: 'red' }}> NOK </strong>
-          geram não conformidade automaticamente.
-        </p>
 
         <select
           value={vistoriaSelecionada}
@@ -266,13 +258,13 @@ export default function Vistorias() {
           <option value="">Selecione a vistoria</option>
           {vistorias.map((v) => (
             <option key={v.id} value={v.id}>
-              {v.condominios?.[0]?.nome || 'Condomínio não informado'} - {v.descricao}
+              {v.condominio?.nome || 'Condomínio não informado'} - {v.descricao}
             </option>
           ))}
         </select>
 
         <input
-          placeholder="Item verificado (ex: Extintores, Iluminação de emergência)"
+          placeholder="Item verificado"
           value={item}
           onChange={(e) => setItem(e.target.value)}
         />
@@ -297,9 +289,6 @@ export default function Vistorias() {
 
       <div className="card">
         <h3>Itens Registrados</h3>
-        <p style={{ marginBottom: '12px', color: '#64748b' }}>
-          Histórico dos itens avaliados nas vistorias realizadas.
-        </p>
 
         {checklists.length === 0 ? (
           <p>Nenhum item de checklist registrado ainda.</p>
