@@ -7,8 +7,12 @@ type NaoConformidade = {
   descricao: string | null
   status: string
   created_at: string
-  condominios?: { nome: string }[]
-  vistorias?: { descricao: string }[]
+  condominio?: {
+    nome: string
+  } | null
+  vistoria?: {
+    descricao: string
+  } | null
 }
 
 type PlanoAcao = {
@@ -32,8 +36,12 @@ export default function Relatorios() {
         descricao,
         status,
         created_at,
-        condominios ( nome ),
-        vistorias ( descricao )
+        condominio:condominios (
+          nome
+        ),
+        vistoria:vistorias (
+          descricao
+        )
       `)
       .order('created_at', { ascending: false })
 
@@ -93,7 +101,7 @@ export default function Relatorios() {
     (p) => p.status === 'concluida' || p.status === 'concluido'
   ).length
 
-  const condominioNome = ncs[0]?.condominios?.[0]?.nome || 'Não informado'
+  const condominioNome = ncs[0]?.condominio?.nome || 'Não informado'
 
   return (
     <>
@@ -205,8 +213,8 @@ export default function Relatorios() {
                 NC {index + 1} — {nc.item_checklist}
               </h3>
 
-              <p><strong>Condomínio:</strong> {nc.condominios?.[0]?.nome || 'Não informado'}</p>
-              <p><strong>Vistoria:</strong> {nc.vistorias?.[0]?.descricao || 'Não informada'}</p>
+              <p><strong>Condomínio:</strong> {nc.condominio?.nome || 'Não informado'}</p>
+              <p><strong>Vistoria:</strong> {nc.vistoria?.descricao || 'Não informada'}</p>
               <p><strong>Descrição:</strong> {nc.descricao || 'Sem descrição'}</p>
               <p><strong>Classificação:</strong> Não conforme</p>
               <p><strong>Status:</strong> {formatarStatusNC(nc.status)}</p>
