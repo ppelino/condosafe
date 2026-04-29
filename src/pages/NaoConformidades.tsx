@@ -3,16 +3,14 @@ import { supabase } from '../lib/supabase'
 
 type NaoConformidade = {
   id: string
-  descricao: string
+  descricao: string | null
   status: string
   item_checklist: string | null
   created_at: string
-
-  condominios?: {
+  condominio?: {
     nome: string
   } | null
-
-  vistorias?: {
+  vistoria?: {
     descricao: string
   } | null
 }
@@ -32,10 +30,10 @@ export default function NaoConformidades() {
         status,
         item_checklist,
         created_at,
-        condominios:condominio_id (
+        condominio:condominios (
           nome
         ),
-        vistorias:vistoria_id (
+        vistoria:vistorias (
           descricao
         )
       `)
@@ -47,7 +45,7 @@ export default function NaoConformidades() {
       return
     }
 
-    setNaoConformidades(data || [])
+    setNaoConformidades((data || []) as unknown as NaoConformidade[])
     setCarregando(false)
   }
 
@@ -73,13 +71,19 @@ export default function NaoConformidades() {
     const s = status.toLowerCase()
 
     if (s === 'aberta') return '#dc2626'
-    if (s === 'em andamento') return '#f59e0b'
+    if (s === 'em andamento' || s === 'andamento') return '#f59e0b'
     return '#16a34a'
+  }
+
+  const formatarStatus = (status: string) => {
+    if (status === 'aberta') return 'Aberta'
+    if (status === 'em andamento' || status === 'andamento') return 'Em andamento'
+    if (status === 'concluida') return 'Concluída'
+    return status
   }
 
   return (
     <>
-      {/* HEADER */}
       <div className="header">
         <div className="premium-badge">CondoSafe Inspector</div>
         <h1>Gestão de Não Conformidades</h1>
@@ -88,7 +92,6 @@ export default function NaoConformidades() {
         </p>
       </div>
 
-      {/* LISTA */}
       <div className="card">
         <h3>Não Conformidades Registradas</h3>
 
@@ -107,33 +110,31 @@ export default function NaoConformidades() {
               className="list-item"
               style={{ borderLeftColor: corStatus(nc.status) }}
             >
-              {/* LADO ESQUERDO */}
               <div>
                 <strong>{nc.item_checklist || 'Item não informado'}</strong>
                 <br />
 
                 <small>
                   <strong>Condomínio:</strong>{' '}
-                  {nc.condominios?.nome || 'Não informado'}
+                  {nc.condominio?.nome || 'Não informado'}
                 </small>
                 <br />
 
                 <small>
                   <strong>Vistoria:</strong>{' '}
-                  {nc.vistorias?.descricao || 'Não informada'}
+                  {nc.vistoria?.descricao || 'Não informada'}
                 </small>
-                <br /><br />
+                <br />
+                <br />
 
-                <span>{nc.descricao}</span>
+                <span>{nc.descricao || 'Sem descrição'}</span>
                 <br />
 
                 <small style={{ color: '#64748b' }}>
-                  Registrada em:{' '}
-                  {new Date(nc.created_at).toLocaleDateString()}
+                  Registrada em: {new Date(nc.created_at).toLocaleDateString()}
                 </small>
               </div>
 
-              {/* LADO DIREITO */}
               <div>
                 <strong
                   style={{
@@ -142,16 +143,15 @@ export default function NaoConformidades() {
                     fontSize: '13px'
                   }}
                 >
-                  {nc.status}
+                  {formatarStatus(nc.status)}
                 </strong>
 
-                <br /><br />
+                <br />
+                <br />
 
                 <select
                   value={nc.status}
-                  onChange={(e) =>
-                    atualizarStatus(nc.id, e.target.value)
-                  }
+                  onChange={(e) => atualizarStatus(nc.id, e.target.value)}
                 >
                   <option value="aberta">Aberta</option>
                   <option value="em andamento">Em andamento</option>
