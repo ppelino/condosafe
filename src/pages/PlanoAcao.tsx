@@ -27,17 +27,6 @@ export default function PlanoAcao() {
   const [status, setStatus] = useState('pendente')
   const [salvando, setSalvando] = useState(false)
 
-  const normalizarStatus = (valor: string) => {
-    const s = valor.trim().toLowerCase()
-
-    if (s === 'andamento') return 'em andamento'
-    if (s === 'em andamento') return 'em andamento'
-    if (s === 'pendente') return 'pendente'
-    if (s === 'concluida') return 'concluida'
-
-    return 'pendente'
-  }
-
   const carregarPlanos = async () => {
     const { data, error } = await supabase
       .from('plano_acao')
@@ -69,7 +58,6 @@ export default function PlanoAcao() {
   const salvarPlano = async () => {
     const acaoLimpa = acao.trim()
     const responsavelLimpo = responsavel.trim()
-    const statusFinal = normalizarStatus(status)
 
     if (!naoConformidadeId) {
       alert('Selecione uma não conformidade.')
@@ -89,7 +77,7 @@ export default function PlanoAcao() {
         acao: acaoLimpa,
         responsavel: responsavelLimpo,
         prazo,
-        status: statusFinal
+        status // agora só pendente ou concluida
       }
     ])
 
@@ -110,11 +98,9 @@ export default function PlanoAcao() {
   }
 
   const atualizarStatus = async (id: string, novoStatus: string) => {
-    const statusFinal = normalizarStatus(novoStatus)
-
     const { error } = await supabase
       .from('plano_acao')
-      .update({ status: statusFinal })
+      .update({ status: novoStatus })
       .eq('id', id)
 
     if (error) {
@@ -126,20 +112,13 @@ export default function PlanoAcao() {
   }
 
   const corStatus = (status: string) => {
-    const s = normalizarStatus(status)
-
-    if (s === 'pendente') return '#dc2626'
-    if (s === 'em andamento') return '#f59e0b'
+    if (status === 'pendente') return '#dc2626'
     return '#16a34a'
   }
 
   const textoStatus = (status: string) => {
-    const s = normalizarStatus(status)
-
-    if (s === 'pendente') return 'Pendente'
-    if (s === 'em andamento') return 'Em andamento'
-    if (s === 'concluida') return 'Concluída'
-
+    if (status === 'pendente') return 'Pendente'
+    if (status === 'concluida') return 'Concluída'
     return status
   }
 
@@ -153,10 +132,6 @@ export default function PlanoAcao() {
       <div className="header">
         <div className="premium-badge">CondoSafe Inspector</div>
         <h1>Plano de Ação Corretiva</h1>
-        <p>
-          Controle e acompanhamento das ações corretivas geradas a partir das
-          vistorias.
-        </p>
       </div>
 
       <div className="card">
@@ -170,9 +145,7 @@ export default function PlanoAcao() {
 
           {naoConformidades.map((nc) => (
             <option key={nc.id} value={nc.id}>
-              {nc.item_checklist ||
-                nc.descricao ||
-                'Não conformidade sem descrição'}
+              {nc.item_checklist || nc.descricao}
             </option>
           ))}
         </select>
@@ -195,9 +168,9 @@ export default function PlanoAcao() {
           onChange={(e) => setPrazo(e.target.value)}
         />
 
+        {/* 🔥 AGORA SÓ 2 STATUS */}
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="pendente">🔴 Pendente</option>
-          <option value="em andamento">🟠 Em andamento</option>
           <option value="concluida">🟢 Concluída</option>
         </select>
 
@@ -209,60 +182,40 @@ export default function PlanoAcao() {
       <div className="card">
         <h3>Ações Registradas ({planos.length})</h3>
 
-        {planos.length === 0 ? (
-          <p>Nenhuma ação registrada.</p>
-        ) : (
-          planos.map((p) => (
-            <div
-              key={p.id}
-              className="list-item"
-              style={{ borderLeftColor: corStatus(p.status) }}
-            >
-              <div>
-                <strong>{p.acao}</strong>
-                <br />
-
-                <small>
-                  <strong>Responsável:</strong> {p.responsavel}
-                </small>
-                <br />
-
-                <small>
-                  <strong>Prazo:</strong>{' '}
-                  {p.prazo
-                    ? new Date(p.prazo + 'T00:00:00').toLocaleDateString(
-                        'pt-BR'
-                      )
-                    : 'Não definido'}
-                </small>
-              </div>
-
-              <div>
-                <strong
-                  style={{
-                    color: corStatus(p.status),
-                    textTransform: 'uppercase',
-                    fontSize: '13px'
-                  }}
-                >
-                  {textoStatus(p.status)}
-                </strong>
-
-                <br />
-                <br />
-
-                <select
-                  value={normalizarStatus(p.status)}
-                  onChange={(e) => atualizarStatus(p.id, e.target.value)}
-                >
-                  <option value="pendente">Pendente</option>
-                  <option value="em andamento">Em andamento</option>
-                  <option value="concluida">Concluída</option>
-                </select>
-              </div>
+        {planos.map((p) => (
+          <div
+            key={p.id}
+            className="list-item"
+            style={{ borderLeftColor: corStatus(p.status) }}
+          >
+            <div>
+              <strong>{p.acao}</strong>
+              <br />
+              <small><strong>Responsável:</strong> {p.responsavel}</small>
+              <br />
+              <small>
+                <strong>Prazo:</strong>{' '}
+                {new Date(p.prazo + 'T00:00:00').toLocaleDateString('pt-BR')}
+              </small>
             </div>
-          ))
-        )}
+
+            <div>
+              <strong style={{ color: corStatus(p.status) }}>
+                {textoStatus(p.status)}
+              </strong>
+
+              <br /><br />
+
+              <select
+                value={p.status}
+                onChange={(e) => atualizarStatus(p.id, e.target.value)}
+              >
+                <option value="pendente">Pendente</option>
+                <option value="concluida">Concluída</option>
+              </select>
+            </div>
+          </div>
+        ))}
       </div>
     </>
   )
