@@ -97,6 +97,21 @@ export default function Dashboard() {
     carregarIndicadores()
   }, [])
 
+  const maiorRanking =
+    ranking.length > 0 ? Math.max(...ranking.map((item) => item.total)) : 1
+
+  const percentualAbertas =
+    totalNCs > 0 ? Math.round((ncsAbertas / totalNCs) * 100) : 0
+
+  const percentualConcluidas =
+    totalNCs > 0 ? Math.round((ncsConcluidas / totalNCs) * 100) : 0
+
+  const percentualPendentes =
+    totalPlanos > 0 ? Math.round((planosPendentes / totalPlanos) * 100) : 0
+
+  const percentualAtrasados =
+    totalPlanos > 0 ? Math.round((planosAtrasados / totalPlanos) * 100) : 0
+
   return (
     <>
       <div className="header premium-header">
@@ -173,8 +188,68 @@ export default function Dashboard() {
         </div>
       </div>
 
+      <div className="dashboard-grid">
+        <div className="card">
+          <h3>Gráfico — Status das Não Conformidades</h3>
+          <p style={{ marginBottom: '16px', color: '#64748b' }}>
+            Distribuição percentual das ocorrências abertas e concluídas.
+          </p>
+
+          <div className="chart-row">
+            <span>Abertas</span>
+            <div className="bar-track">
+              <div
+                className="bar-fill danger"
+                style={{ width: `${percentualAbertas}%` }}
+              />
+            </div>
+            <strong>{percentualAbertas}%</strong>
+          </div>
+
+          <div className="chart-row">
+            <span>Concluídas</span>
+            <div className="bar-track">
+              <div
+                className="bar-fill success"
+                style={{ width: `${percentualConcluidas}%` }}
+              />
+            </div>
+            <strong>{percentualConcluidas}%</strong>
+          </div>
+        </div>
+
+        <div className="card">
+          <h3>Gráfico — Status dos Planos de Ação</h3>
+          <p style={{ marginBottom: '16px', color: '#64748b' }}>
+            Percentual de planos pendentes e atrasados.
+          </p>
+
+          <div className="chart-row">
+            <span>Pendentes</span>
+            <div className="bar-track">
+              <div
+                className="bar-fill warning"
+                style={{ width: `${percentualPendentes}%` }}
+              />
+            </div>
+            <strong>{percentualPendentes}%</strong>
+          </div>
+
+          <div className="chart-row">
+            <span>Atrasados</span>
+            <div className="bar-track">
+              <div
+                className="bar-fill danger"
+                style={{ width: `${percentualAtrasados}%` }}
+              />
+            </div>
+            <strong>{percentualAtrasados}%</strong>
+          </div>
+        </div>
+      </div>
+
       <div className="card">
-        <h3>Ranking de Risco por Condomínio</h3>
+        <h3>Gráfico — Ranking de Risco por Condomínio</h3>
         <p style={{ marginBottom: '16px', color: '#64748b' }}>
           Condomínios com maior número de não conformidades registradas.
         </p>
@@ -182,23 +257,32 @@ export default function Dashboard() {
         {ranking.length === 0 ? (
           <p>Nenhum dado suficiente para gerar ranking.</p>
         ) : (
-          ranking.map((item, index) => (
-            <div key={item.nome} className="list-item">
-              <div>
-                <strong>
-                  {index + 1}º — {item.nome}
-                </strong>
-                <br />
+          ranking.map((item, index) => {
+            const largura = Math.max(12, Math.round((item.total / maiorRanking) * 100))
+
+            return (
+              <div key={item.nome} className="ranking-item">
+                <div className="ranking-top">
+                  <strong>
+                    {index + 1}º — {item.nome}
+                  </strong>
+
+                  <strong style={{ color: '#dc2626', fontSize: '22px' }}>
+                    {item.total}
+                  </strong>
+                </div>
+
+                <div className="bar-track">
+                  <div
+                    className="bar-fill primary"
+                    style={{ width: `${largura}%` }}
+                  />
+                </div>
+
                 <small>Total de não conformidades registradas</small>
               </div>
-
-              <div>
-                <strong style={{ color: '#dc2626', fontSize: '22px' }}>
-                  {item.total}
-                </strong>
-              </div>
-            </div>
-          ))
+            )
+          })
         )}
       </div>
 
