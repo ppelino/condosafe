@@ -1,61 +1,96 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+type Plano = {
+  id: string
+  nao_conformidade_id: string
+  acao: string
+  responsavel: string
+  prazo: string
+  status: string
+}
+
 type NaoConformidade = {
   id: string
   descricao: string | null
-  status: string
   item_checklist: string | null
-  created_at: string
-  condominio?: {
-    nome: string
-  } | null
-  vistoria?: {
-    descricao: string
-  } | null
 }
 
-export default function NaoConformidades() {
+export default function PlanoAcao() {
+  const [planos, setPlanos] = useState<Plano[]>([])
   const [naoConformidades, setNaoConformidades] = useState<NaoConformidade[]>([])
-  const [carregando, setCarregando] = useState(true)
+
+  const [naoConformidadeId, setNaoConformidadeId] = useState('')
+  const [acao, setAcao] = useState('')
+  const [responsavel, setResponsavel] = useState('')
+  const [prazo, setPrazo] = useState('')
+  const [status, setStatus] = useState('pendente')
+  const [salvando, setSalvando] = useState(false)
+
+  const carregarPlanos = async () => {
+    const { data, error } = await supabase
+      .from('plano_acao')
+      .select('*')
+      .order('prazo', { ascending: true })
+
+    if (error) {
+      alert('Erro ao carregar plano de ação: ' + error.message)
+      return
+    }
+
+    setPlanos(data || [])
+  }
 
   const carregarNaoConformidades = async () => {
-    setCarregando(true)
-
     const { data, error } = await supabase
       .from('nao_conformidades')
-      .select(`
-        id,
-        descricao,
-        status,
-        item_checklist,
-        created_at,
-        condominio:condominios (
-          nome
-        ),
-        vistoria:vistorias (
-          descricao
-        )
-      `)
+      .select('id, descricao, item_checklist')
       .order('created_at', { ascending: false })
 
     if (error) {
       alert('Erro ao carregar não conformidades: ' + error.message)
-      setCarregando(false)
       return
     }
 
-    setNaoConformidades((data || []) as unknown as NaoConformidade[])
-    setCarregando(false)
+    setNaoConformidades(data || [])
   }
 
-  useEffect(() => {
-    carregarNaoConformidades()
-  }, [])
+  const salvarPlano = async () => {
+    if (!naoConformidadeId || !acao.trim() || !responsavel.trim() || !prazo) {
+      alert('Selecione uma não conformidade e preencha ação, responsável e prazo.')
+      return
+    }
+
+    setSalvando(true)
+
+    const { error } = await supabase.from('plano_acao').insert([
+      {
+        nao_conformidade_id: naoConformidadeId,
+        acao: acao.trim(),
+        responsavel: responsavel.trim(),
+        prazo,
+        status
+      }
+    ])
+
+    setSalvando(false)
+
+    if (error) {
+      alert('Erro ao salvar plano de ação.\n\nDetalhe técnico: ' + error.message)
+      return
+    }
+
+    setNaoConformidadeId('')
+    setAcao('')
+    setResponsavel('')
+    setPrazo('')
+    setStatus('pendente')
+    carregarPlanos()
+  }
 
   const atualizarStatus = async (id: string, novoStatus: string) => {
     const { error } = await supabase
-      .from('nao_conformidades')
+      .from('plano_acao')
       .update({ status: novoStatus })
       .eq('id', id)
 
@@ -64,97 +99,130 @@ export default function NaoConformidades() {
       return
     }
 
-    carregarNaoConformidades()
+    carregarPlanos()
   }
 
   const corStatus = (status: string) => {
-    const s = status.toLowerCase()
-
-    if (s === 'aberta') return '#dc2626'
-    if (s === 'em andamento' || s === 'andamento') return '#f59e0b'
+    if (status === 'pendente') return '#dc2626'
+    if (status === 'andamento') return '#f59e0b'
     return '#16a34a'
   }
 
-  const formatarStatus = (status: string) => {
-    if (status === 'aberta') return 'Aberta'
-    if (status === 'em andamento' || status === 'andamento') return 'Em andamento'
+  const textoStatus = (status: string) => {
+    if (status === 'pendente') return 'Pendente'
+    if (status === 'andamento') return 'Em andamento'
     if (status === 'concluida') return 'Concluída'
     return status
   }
+
+  useEffect(() => {
+    carregarPlanos()
+    carregarNaoConformidades()
+  }, [])
 
   return (
     <>
       <div className="header">
         <div className="premium-badge">CondoSafe Inspector</div>
-        <h1>Gestão de Não Conformidades</h1>
+        <h1>Plano de Ação Corretiva</h1>
         <p>
-          Acompanhamento técnico das irregularidades identificadas nas vistorias condominiais.
+          Controle e acompanhamento das ações corretivas geradas a partir das vistorias.
         </p>
       </div>
 
       <div className="card">
-        <h3>Não Conformidades Registradas</h3>
+        <h3>Nova Ação Corretiva</h3>
 
-        <p style={{ marginBottom: '16px', color: '#64748b' }}>
-          Controle de ocorrências abertas, em andamento e concluídas para apoio ao plano de ação.
-        </p>
+        <select
+          value={naoConformidadeId}
+          onChange={(e) => setNaoConformidadeId(e.target.value)}
+        >
+          <option value="">Selecione a não conformidade</option>
+          {naoConformidades.map((nc) => (
+            <option key={nc.id} value={nc.id}>
+              {nc.item_checklist || nc.descricao || 'Não conformidade sem descrição'}
+            </option>
+          ))}
+        </select>
 
-        {carregando ? (
-          <p>Carregando registros...</p>
-        ) : naoConformidades.length === 0 ? (
-          <p>Nenhuma não conformidade registrada ainda.</p>
+        <input
+          placeholder="Descreva a ação corretiva"
+          value={acao}
+          onChange={(e) => setAcao(e.target.value)}
+        />
+
+        <input
+          placeholder="Responsável"
+          value={responsavel}
+          onChange={(e) => setResponsavel(e.target.value)}
+        />
+
+        <input
+          type="date"
+          value={prazo}
+          onChange={(e) => setPrazo(e.target.value)}
+        />
+
+        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="pendente">🔴 Pendente</option>
+          <option value="andamento">🟠 Em andamento</option>
+          <option value="concluida">🟢 Concluída</option>
+        </select>
+
+        <button onClick={salvarPlano} disabled={salvando}>
+          {salvando ? 'Salvando...' : 'Salvar Plano de Ação'}
+        </button>
+      </div>
+
+      <div className="card">
+        <h3>Ações Registradas ({planos.length})</h3>
+
+        {planos.length === 0 ? (
+          <p>Nenhuma ação registrada.</p>
         ) : (
-          naoConformidades.map((nc) => (
+          planos.map((p) => (
             <div
-              key={nc.id}
+              key={p.id}
               className="list-item"
-              style={{ borderLeftColor: corStatus(nc.status) }}
+              style={{ borderLeftColor: corStatus(p.status) }}
             >
               <div>
-                <strong>{nc.item_checklist || 'Item não informado'}</strong>
+                <strong>{p.acao}</strong>
                 <br />
 
                 <small>
-                  <strong>Condomínio:</strong>{' '}
-                  {nc.condominio?.nome || 'Não informado'}
+                  <strong>Responsável:</strong> {p.responsavel}
                 </small>
                 <br />
 
                 <small>
-                  <strong>Vistoria:</strong>{' '}
-                  {nc.vistoria?.descricao || 'Não informada'}
-                </small>
-                <br />
-                <br />
-
-                <span>{nc.descricao || 'Sem descrição'}</span>
-                <br />
-
-                <small style={{ color: '#64748b' }}>
-                  Registrada em: {new Date(nc.created_at).toLocaleDateString()}
+                  <strong>Prazo:</strong>{' '}
+                  {p.prazo
+                    ? new Date(p.prazo + 'T00:00:00').toLocaleDateString('pt-BR')
+                    : 'Não definido'}
                 </small>
               </div>
 
               <div>
                 <strong
                   style={{
-                    color: corStatus(nc.status),
+                    color: corStatus(p.status),
                     textTransform: 'uppercase',
                     fontSize: '13px'
                   }}
                 >
-                  {formatarStatus(nc.status)}
+                  {textoStatus(p.status)}
                 </strong>
 
                 <br />
                 <br />
 
                 <select
-                  value={nc.status}
-                  onChange={(e) => atualizarStatus(nc.id, e.target.value)}
+                  value={p.status}
+                  onChange={(e) => atualizarStatus(p.id, e.target.value)}
                 >
-                  <option value="aberta">Aberta</option>
-                  <option value="em andamento">Em andamento</option>
+                  <option value="pendente">Pendente</option>
+                  <option value="andamento">Em andamento</option>
                   <option value="concluida">Concluída</option>
                 </select>
               </div>
