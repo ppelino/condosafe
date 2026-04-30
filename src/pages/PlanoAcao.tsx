@@ -27,9 +27,17 @@ export default function PlanoAcao() {
   const [status, setStatus] = useState('pendente')
   const [salvando, setSalvando] = useState(false)
 
-  // ===============================
-  // CARREGAR PLANOS
-  // ===============================
+  const normalizarStatus = (valor: string) => {
+    const s = valor.trim().toLowerCase()
+
+    if (s === 'andamento') return 'em andamento'
+    if (s === 'em andamento') return 'em andamento'
+    if (s === 'pendente') return 'pendente'
+    if (s === 'concluida') return 'concluida'
+
+    return 'pendente'
+  }
+
   const carregarPlanos = async () => {
     const { data, error } = await supabase
       .from('plano_acao')
@@ -44,9 +52,6 @@ export default function PlanoAcao() {
     setPlanos(data || [])
   }
 
-  // ===============================
-  // CARREGAR NÃO CONFORMIDADES
-  // ===============================
   const carregarNaoConformidades = async () => {
     const { data, error } = await supabase
       .from('nao_conformidades')
@@ -61,12 +66,10 @@ export default function PlanoAcao() {
     setNaoConformidades(data || [])
   }
 
-  // ===============================
-  // SALVAR PLANO
-  // ===============================
   const salvarPlano = async () => {
     const acaoLimpa = acao.trim()
     const responsavelLimpo = responsavel.trim()
+    const statusFinal = normalizarStatus(status)
 
     if (!naoConformidadeId) {
       alert('Selecione uma não conformidade.')
@@ -86,7 +89,7 @@ export default function PlanoAcao() {
         acao: acaoLimpa,
         responsavel: responsavelLimpo,
         prazo,
-        status
+        status: statusFinal
       }
     ])
 
@@ -97,7 +100,6 @@ export default function PlanoAcao() {
       return
     }
 
-    // limpar formulário
     setNaoConformidadeId('')
     setAcao('')
     setResponsavel('')
@@ -107,13 +109,12 @@ export default function PlanoAcao() {
     carregarPlanos()
   }
 
-  // ===============================
-  // ATUALIZAR STATUS
-  // ===============================
   const atualizarStatus = async (id: string, novoStatus: string) => {
+    const statusFinal = normalizarStatus(novoStatus)
+
     const { error } = await supabase
       .from('plano_acao')
-      .update({ status: novoStatus })
+      .update({ status: statusFinal })
       .eq('id', id)
 
     if (error) {
@@ -124,33 +125,29 @@ export default function PlanoAcao() {
     carregarPlanos()
   }
 
-  // ===============================
-  // CORES
-  // ===============================
   const corStatus = (status: string) => {
-    if (status === 'pendente') return '#dc2626'
-    if (status === 'andamento') return '#f59e0b'
+    const s = normalizarStatus(status)
+
+    if (s === 'pendente') return '#dc2626'
+    if (s === 'em andamento') return '#f59e0b'
     return '#16a34a'
   }
 
   const textoStatus = (status: string) => {
-    if (status === 'pendente') return 'Pendente'
-    if (status === 'andamento') return 'Em andamento'
-    if (status === 'concluida') return 'Concluída'
+    const s = normalizarStatus(status)
+
+    if (s === 'pendente') return 'Pendente'
+    if (s === 'em andamento') return 'Em andamento'
+    if (s === 'concluida') return 'Concluída'
+
     return status
   }
 
-  // ===============================
-  // INIT
-  // ===============================
   useEffect(() => {
     carregarPlanos()
     carregarNaoConformidades()
   }, [])
 
-  // ===============================
-  // UI
-  // ===============================
   return (
     <>
       <div className="header">
@@ -165,7 +162,6 @@ export default function PlanoAcao() {
       <div className="card">
         <h3>Nova Ação Corretiva</h3>
 
-        {/* 🔥 NOVO CAMPO OBRIGATÓRIO */}
         <select
           value={naoConformidadeId}
           onChange={(e) => setNaoConformidadeId(e.target.value)}
@@ -201,7 +197,7 @@ export default function PlanoAcao() {
 
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="pendente">🔴 Pendente</option>
-          <option value="andamento">🟠 Em andamento</option>
+          <option value="em andamento">🟠 Em andamento</option>
           <option value="concluida">🟢 Concluída</option>
         </select>
 
@@ -256,11 +252,11 @@ export default function PlanoAcao() {
                 <br />
 
                 <select
-                  value={p.status}
+                  value={normalizarStatus(p.status)}
                   onChange={(e) => atualizarStatus(p.id, e.target.value)}
                 >
                   <option value="pendente">Pendente</option>
-                  <option value="andamento">Em andamento</option>
+                  <option value="em andamento">Em andamento</option>
                   <option value="concluida">Concluída</option>
                 </select>
               </div>
