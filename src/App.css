@@ -357,3 +357,85 @@ button:hover {
 .table td button {
   display: inline-block;
 }
+/* DASHBOARD EXECUTIVO */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 50px;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.chart-row span {
+  font-size: 14px;
+  color: #334155;
+}
+
+.bar-track {
+  width: 100%;
+  height: 12px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.bar-fill.primary {
+  background: #2563eb;
+}
+
+.bar-fill.success {
+  background: #16a34a;
+}
+
+.bar-fill.warning {
+  background: #f59e0b;
+}
+
+.bar-fill.danger {
+  background: #dc2626;
+}
+
+.ranking-item {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #2563eb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.ranking-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.ranking-item small {
+  display: block;
+  margin-top: 8px;
+  color: #64748b;
+}
+
+@media (max-width: 768px) {
+  .chart-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .ranking-top {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
