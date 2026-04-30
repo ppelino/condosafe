@@ -111,9 +111,6 @@ export default function Condominios() {
 
       <div className="card">
         <h3>{editandoId ? 'Editar Condomínio' : 'Cadastrar Condomínio'}</h3>
-        <p style={{ marginBottom: '12px', color: '#64748b' }}>
-          Informe os dados básicos do condomínio monitorado pelo sistema.
-        </p>
 
         <div className="form-grid">
           <input
@@ -141,16 +138,13 @@ export default function Condominios() {
 
         {editandoId && (
           <button className="btn-secondary" onClick={limparFormulario}>
-            Cancelar edição
+            Cancelar
           </button>
         )}
       </div>
 
       <div className="card">
         <h3>Condomínios Cadastrados</h3>
-        <p style={{ marginBottom: '12px', color: '#64748b' }}>
-          Lista completa das unidades monitoradas pelo sistema.
-        </p>
 
         {condominios.length === 0 ? (
           <p>Nenhum condomínio cadastrado ainda.</p>
@@ -172,11 +166,34 @@ export default function Condominios() {
                     <td>{c.nome}</td>
                     <td>{c.cidade}</td>
                     <td>{c.estado}</td>
-                    <td>
-                      <button onClick={() => editarCondominio(c)}>Editar</button>
+
+                    <td style={{ display: 'flex', gap: '8px' }}>
+                      {/* EDITAR */}
                       <button
-                        className="btn-danger"
+                        onClick={() => editarCondominio(c)}
+                        style={{
+                          background: '#e0f2fe',
+                          color: '#0369a1',
+                          border: 'none',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Editar
+                      </button>
+
+                      {/* EXCLUIR */}
+                      <button
                         onClick={() => excluirCondominio(c.id)}
+                        style={{
+                          background: '#fee2e2',
+                          color: '#b91c1c',
+                          border: 'none',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          cursor: 'pointer'
+                        }}
                       >
                         Excluir
                       </button>
