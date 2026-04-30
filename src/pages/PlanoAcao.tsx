@@ -3,20 +3,33 @@ import { supabase } from '../lib/supabase'
 
 type Plano = {
   id: string
+  nao_conformidade_id: string
   acao: string
   responsavel: string
   prazo: string
   status: string
 }
 
+type NaoConformidade = {
+  id: string
+  descricao: string | null
+  item_checklist: string | null
+}
+
 export default function PlanoAcao() {
   const [planos, setPlanos] = useState<Plano[]>([])
+  const [naoConformidades, setNaoConformidades] = useState<NaoConformidade[]>([])
+
+  const [naoConformidadeId, setNaoConformidadeId] = useState('')
   const [acao, setAcao] = useState('')
   const [responsavel, setResponsavel] = useState('')
   const [prazo, setPrazo] = useState('')
   const [status, setStatus] = useState('pendente')
   const [salvando, setSalvando] = useState(false)
 
+  // ===============================
+  // CARREGAR PLANOS
+  // ===============================
   const carregarPlanos = async () => {
     const { data, error } = await supabase
       .from('plano_acao')
@@ -24,30 +37,44 @@ export default function PlanoAcao() {
       .order('prazo', { ascending: true })
 
     if (error) {
-      console.error('Erro ao carregar plano de ação:', error)
-      alert(`Erro ao carregar plano de ação: ${error.message}`)
+      alert('Erro ao carregar plano de ação: ' + error.message)
       return
     }
 
     setPlanos(data || [])
   }
 
-  const salvarPlano = async () => {
-    const acaoLimpa = acao.trim()
-    const responsavelLimpo = responsavel.trim()
-    const statusLimpo = status.trim().toLowerCase()
+  // ===============================
+  // CARREGAR NÃO CONFORMIDADES
+  // ===============================
+  const carregarNaoConformidades = async () => {
+    const { data, error } = await supabase
+      .from('nao_conformidades')
+      .select('id, descricao, item_checklist')
+      .order('created_at', { ascending: false })
 
-    if (!acaoLimpa || !responsavelLimpo || !prazo) {
-      alert('Preencha ação, responsável e prazo.')
+    if (error) {
+      alert('Erro ao carregar não conformidades: ' + error.message)
       return
     }
 
-    if (
-      statusLimpo !== 'pendente' &&
-      statusLimpo !== 'andamento' &&
-      statusLimpo !== 'concluida'
-    ) {
-      alert('Status inválido. Use: pendente, andamento ou concluida.')
+    setNaoConformidades(data || [])
+  }
+
+  // ===============================
+  // SALVAR PLANO
+  // ===============================
+  const salvarPlano = async () => {
+    const acaoLimpa = acao.trim()
+    const responsavelLimpo = responsavel.trim()
+
+    if (!naoConformidadeId) {
+      alert('Selecione uma não conformidade.')
+      return
+    }
+
+    if (!acaoLimpa || !responsavelLimpo || !prazo) {
+      alert('Preencha ação, responsável e prazo.')
       return
     }
 
@@ -55,49 +82,51 @@ export default function PlanoAcao() {
 
     const { error } = await supabase.from('plano_acao').insert([
       {
+        nao_conformidade_id: naoConformidadeId,
         acao: acaoLimpa,
         responsavel: responsavelLimpo,
         prazo,
-        status: statusLimpo
+        status
       }
     ])
 
     setSalvando(false)
 
     if (error) {
-      console.error('Erro ao salvar plano:', error)
-
-      alert(
-        `Erro ao salvar plano de ação.\n\nDetalhe técnico: ${error.message}`
-      )
-
+      alert('Erro ao salvar plano de ação:\n\n' + error.message)
       return
     }
 
+    // limpar formulário
+    setNaoConformidadeId('')
     setAcao('')
     setResponsavel('')
     setPrazo('')
     setStatus('pendente')
+
     carregarPlanos()
   }
 
+  // ===============================
+  // ATUALIZAR STATUS
+  // ===============================
   const atualizarStatus = async (id: string, novoStatus: string) => {
-    const statusLimpo = novoStatus.trim().toLowerCase()
-
     const { error } = await supabase
       .from('plano_acao')
-      .update({ status: statusLimpo })
+      .update({ status: novoStatus })
       .eq('id', id)
 
     if (error) {
-      console.error('Erro ao atualizar status:', error)
-      alert(`Erro ao atualizar status: ${error.message}`)
+      alert('Erro ao atualizar status: ' + error.message)
       return
     }
 
     carregarPlanos()
   }
 
+  // ===============================
+  // CORES
+  // ===============================
   const corStatus = (status: string) => {
     if (status === 'pendente') return '#dc2626'
     if (status === 'andamento') return '#f59e0b'
@@ -111,10 +140,17 @@ export default function PlanoAcao() {
     return status
   }
 
+  // ===============================
+  // INIT
+  // ===============================
   useEffect(() => {
     carregarPlanos()
+    carregarNaoConformidades()
   }, [])
 
+  // ===============================
+  // UI
+  // ===============================
   return (
     <>
       <div className="header">
@@ -128,6 +164,22 @@ export default function PlanoAcao() {
 
       <div className="card">
         <h3>Nova Ação Corretiva</h3>
+
+        {/* 🔥 NOVO CAMPO OBRIGATÓRIO */}
+        <select
+          value={naoConformidadeId}
+          onChange={(e) => setNaoConformidadeId(e.target.value)}
+        >
+          <option value="">Selecione a não conformidade</option>
+
+          {naoConformidades.map((nc) => (
+            <option key={nc.id} value={nc.id}>
+              {nc.item_checklist ||
+                nc.descricao ||
+                'Não conformidade sem descrição'}
+            </option>
+          ))}
+        </select>
 
         <input
           placeholder="Descreva a ação corretiva"
