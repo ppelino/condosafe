@@ -676,3 +676,35 @@ canvas {
     padding: 16px;
   }
 }
+.form-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.form-mini-card {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.form-mini-card label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.form-mini-card input {
+  margin-bottom: 0;
+  background: white;
+}
+
+@media (max-width: 900px) {
+  .form-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
