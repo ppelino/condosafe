@@ -126,7 +126,8 @@ export default function PlanoAcao() {
         <div className="premium-badge">CondoSafe Inspector</div>
         <h1>Plano de Ação Corretiva</h1>
         <p>
-          Controle e acompanhamento das ações corretivas geradas a partir das vistorias.
+          Controle e acompanhamento das ações corretivas geradas a partir das
+          vistorias.
         </p>
       </div>
 
@@ -138,9 +139,12 @@ export default function PlanoAcao() {
           onChange={(e) => setNaoConformidadeId(e.target.value)}
         >
           <option value="">Selecione a não conformidade</option>
+
           {naoConformidades.map((nc) => (
             <option key={nc.id} value={nc.id}>
-              {nc.item_checklist || nc.descricao || 'Não conformidade sem descrição'}
+              {nc.item_checklist ||
+                nc.descricao ||
+                'Não conformidade sem descrição'}
             </option>
           ))}
         </select>
@@ -198,7 +202,9 @@ export default function PlanoAcao() {
                 <small>
                   <strong>Prazo:</strong>{' '}
                   {p.prazo
-                    ? new Date(p.prazo + 'T00:00:00').toLocaleDateString('pt-BR')
+                    ? new Date(p.prazo + 'T00:00:00').toLocaleDateString(
+                        'pt-BR'
+                      )
                     : 'Não definido'}
                 </small>
               </div>
