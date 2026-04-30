@@ -286,6 +286,7 @@ button:hover {
     border: none !important;
   }
 }
+
 @media print {
   .sidebar,
   .no-print,
@@ -318,6 +319,7 @@ button:hover {
     background: white !important;
   }
 }
+
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
@@ -357,6 +359,7 @@ button:hover {
 .table td button {
   display: inline-block;
 }
+
 /* DASHBOARD EXECUTIVO */
 .dashboard-grid {
   display: grid;
@@ -437,5 +440,239 @@ button:hover {
   .ranking-top {
     flex-direction: column;
     gap: 4px;
+  }
+}
+
+/* ================================================= */
+/* RESPONSIVIDADE - CELULAR, TABLET E PC */
+/* ================================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+svg,
+canvas {
+  max-width: 100%;
+}
+
+/* TABLET */
+@media (max-width: 1024px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    padding: 18px 20px;
+  }
+
+  .sidebar h2 {
+    margin-bottom: 16px;
+    font-size: 22px;
+  }
+
+  .sidebar a {
+    display: inline-block;
+    margin-right: 8px;
+    margin-bottom: 8px;
+    padding: 10px 12px;
+  }
+
+  .main {
+    padding: 24px;
+    max-width: 100%;
+  }
+
+  .header {
+    padding: 28px 24px;
+  }
+
+  .header h1 {
+    font-size: 30px;
+  }
+
+  .cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .report-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .report-header {
+    flex-direction: column;
+  }
+
+  .report-box {
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .signature-area {
+    gap: 24px;
+  }
+}
+
+/* CELULAR */
+@media (max-width: 640px) {
+  .sidebar {
+    padding: 16px;
+  }
+
+  .sidebar h2 {
+    font-size: 20px;
+    margin-bottom: 14px;
+  }
+
+  .sidebar a {
+    display: block;
+    width: 100%;
+    margin-right: 0;
+    font-size: 14px;
+  }
+
+  .main {
+    padding: 16px;
+  }
+
+  .header {
+    padding: 22px 18px;
+    border-radius: 14px;
+    margin-bottom: 18px;
+  }
+
+  .header h1 {
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  .header p {
+    font-size: 14px;
+  }
+
+  .premium-badge {
+    font-size: 11px;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .card {
+    padding: 20px;
+    border-radius: 14px;
+    margin-bottom: 16px;
+  }
+
+  .card-number {
+    font-size: 28px;
+  }
+
+  input,
+  select {
+    font-size: 16px;
+  }
+
+  button {
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .list-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table {
+    min-width: 720px;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-row {
+    grid-template-columns: 1fr;
+  }
+
+  .ranking-top {
+    flex-direction: column;
+  }
+
+  .report-area {
+    padding: 20px;
+    border-radius: 10px;
+  }
+
+  .report-area h1 {
+    font-size: 22px;
+  }
+
+  .report-area h2 {
+    font-size: 18px;
+  }
+
+  .report-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .report-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .report-box {
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .signature-area {
+    flex-direction: column;
+    gap: 34px;
+    margin-top: 40px;
+  }
+}
+
+/* CELULAR PEQUENO */
+@media (max-width: 420px) {
+  .main {
+    padding: 12px;
+  }
+
+  .header {
+    padding: 18px 14px;
+  }
+
+  .header h1 {
+    font-size: 22px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .report-area {
+    padding: 16px;
   }
 }
