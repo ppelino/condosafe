@@ -112,24 +112,33 @@ export default function Condominios() {
       <div className="card">
         <h3>{editandoId ? 'Editar Condomínio' : 'Cadastrar Condomínio'}</h3>
 
-        <div className="form-grid">
-          <input
-            placeholder="Nome do condomínio"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-          />
+        <div className="form-card-grid">
+          <div className="form-mini-card">
+            <label>Nome do Condomínio</label>
+            <input
+              placeholder="Ex: Condomínio Safira"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+            />
+          </div>
 
-          <input
-            placeholder="Cidade"
-            value={cidade}
-            onChange={(e) => setCidade(e.target.value)}
-          />
+          <div className="form-mini-card">
+            <label>Cidade</label>
+            <input
+              placeholder="Ex: Suzano"
+              value={cidade}
+              onChange={(e) => setCidade(e.target.value)}
+            />
+          </div>
 
-          <input
-            placeholder="Estado"
-            value={estado}
-            onChange={(e) => setEstado(e.target.value)}
-          />
+          <div className="form-mini-card">
+            <label>Estado</label>
+            <input
+              placeholder="Ex: SP"
+              value={estado}
+              onChange={(e) => setEstado(e.target.value)}
+            />
+          </div>
         </div>
 
         <button onClick={salvarCondominio}>
@@ -168,7 +177,6 @@ export default function Condominios() {
                     <td>{c.estado}</td>
 
                     <td style={{ display: 'flex', gap: '8px' }}>
-                      {/* EDITAR */}
                       <button
                         onClick={() => editarCondominio(c)}
                         style={{
@@ -183,7 +191,6 @@ export default function Condominios() {
                         Editar
                       </button>
 
-                      {/* EXCLUIR */}
                       <button
                         onClick={() => excluirCondominio(c.id)}
                         style={{
