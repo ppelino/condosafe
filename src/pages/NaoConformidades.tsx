@@ -1,96 +1,43 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-type Plano = {
-  id: string
-  nao_conformidade_id: string
-  acao: string
-  responsavel: string
-  prazo: string
-  status: string
-}
-
 type NaoConformidade = {
   id: string
   descricao: string | null
+  status: string
   item_checklist: string | null
+  created_at: string
 }
 
-export default function PlanoAcao() {
-  const [planos, setPlanos] = useState<Plano[]>([])
+export default function NaoConformidades() {
   const [naoConformidades, setNaoConformidades] = useState<NaoConformidade[]>([])
-
-  const [naoConformidadeId, setNaoConformidadeId] = useState('')
-  const [acao, setAcao] = useState('')
-  const [responsavel, setResponsavel] = useState('')
-  const [prazo, setPrazo] = useState('')
-  const [status, setStatus] = useState('pendente')
-  const [salvando, setSalvando] = useState(false)
-
-  const carregarPlanos = async () => {
-    const { data, error } = await supabase
-      .from('plano_acao')
-      .select('*')
-      .order('prazo', { ascending: true })
-
-    if (error) {
-      alert('Erro ao carregar plano de ação: ' + error.message)
-      return
-    }
-
-    setPlanos(data || [])
-  }
+  const [carregando, setCarregando] = useState(true)
 
   const carregarNaoConformidades = async () => {
+    setCarregando(true)
+
     const { data, error } = await supabase
       .from('nao_conformidades')
-      .select('id, descricao, item_checklist')
+      .select('*')
       .order('created_at', { ascending: false })
 
     if (error) {
       alert('Erro ao carregar não conformidades: ' + error.message)
+      setCarregando(false)
       return
     }
 
     setNaoConformidades(data || [])
+    setCarregando(false)
   }
 
-  const salvarPlano = async () => {
-    if (!naoConformidadeId || !acao.trim() || !responsavel.trim() || !prazo) {
-      alert('Selecione uma não conformidade e preencha ação, responsável e prazo.')
-      return
-    }
-
-    setSalvando(true)
-
-    const { error } = await supabase.from('plano_acao').insert([
-      {
-        nao_conformidade_id: naoConformidadeId,
-        acao: acao.trim(),
-        responsavel: responsavel.trim(),
-        prazo,
-        status
-      }
-    ])
-
-    setSalvando(false)
-
-    if (error) {
-      alert('Erro ao salvar plano de ação.\n\nDetalhe técnico: ' + error.message)
-      return
-    }
-
-    setNaoConformidadeId('')
-    setAcao('')
-    setResponsavel('')
-    setPrazo('')
-    setStatus('pendente')
-    carregarPlanos()
-  }
+  useEffect(() => {
+    carregarNaoConformidades()
+  }, [])
 
   const atualizarStatus = async (id: string, novoStatus: string) => {
     const { error } = await supabase
-      .from('plano_acao')
+      .from('nao_conformidades')
       .update({ status: novoStatus })
       .eq('id', id)
 
@@ -99,136 +46,77 @@ export default function PlanoAcao() {
       return
     }
 
-    carregarPlanos()
+    carregarNaoConformidades()
   }
 
   const corStatus = (status: string) => {
-    if (status === 'pendente') return '#dc2626'
-    if (status === 'andamento') return '#f59e0b'
+    if (status === 'aberta') return '#dc2626'
+    if (status === 'em andamento') return '#f59e0b'
     return '#16a34a'
   }
 
   const textoStatus = (status: string) => {
-    if (status === 'pendente') return 'Pendente'
-    if (status === 'andamento') return 'Em andamento'
+    if (status === 'aberta') return 'Aberta'
+    if (status === 'em andamento') return 'Em andamento'
     if (status === 'concluida') return 'Concluída'
     return status
   }
-
-  useEffect(() => {
-    carregarPlanos()
-    carregarNaoConformidades()
-  }, [])
 
   return (
     <>
       <div className="header">
         <div className="premium-badge">CondoSafe Inspector</div>
-        <h1>Plano de Ação Corretiva</h1>
+        <h1>Gestão de Não Conformidades</h1>
         <p>
-          Controle e acompanhamento das ações corretivas geradas a partir das
-          vistorias.
+          Acompanhamento técnico das irregularidades identificadas nas vistorias.
         </p>
       </div>
 
       <div className="card">
-        <h3>Nova Ação Corretiva</h3>
+        <h3>Não Conformidades Registradas</h3>
 
-        <select
-          value={naoConformidadeId}
-          onChange={(e) => setNaoConformidadeId(e.target.value)}
-        >
-          <option value="">Selecione a não conformidade</option>
-
-          {naoConformidades.map((nc) => (
-            <option key={nc.id} value={nc.id}>
-              {nc.item_checklist ||
-                nc.descricao ||
-                'Não conformidade sem descrição'}
-            </option>
-          ))}
-        </select>
-
-        <input
-          placeholder="Descreva a ação corretiva"
-          value={acao}
-          onChange={(e) => setAcao(e.target.value)}
-        />
-
-        <input
-          placeholder="Responsável"
-          value={responsavel}
-          onChange={(e) => setResponsavel(e.target.value)}
-        />
-
-        <input
-          type="date"
-          value={prazo}
-          onChange={(e) => setPrazo(e.target.value)}
-        />
-
-        <select value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="pendente">🔴 Pendente</option>
-          <option value="andamento">🟠 Em andamento</option>
-          <option value="concluida">🟢 Concluída</option>
-        </select>
-
-        <button onClick={salvarPlano} disabled={salvando}>
-          {salvando ? 'Salvando...' : 'Salvar Plano de Ação'}
-        </button>
-      </div>
-
-      <div className="card">
-        <h3>Ações Registradas ({planos.length})</h3>
-
-        {planos.length === 0 ? (
-          <p>Nenhuma ação registrada.</p>
+        {carregando ? (
+          <p>Carregando...</p>
+        ) : naoConformidades.length === 0 ? (
+          <p>Nenhuma não conformidade registrada.</p>
         ) : (
-          planos.map((p) => (
+          naoConformidades.map((nc) => (
             <div
-              key={p.id}
+              key={nc.id}
               className="list-item"
-              style={{ borderLeftColor: corStatus(p.status) }}
+              style={{ borderLeftColor: corStatus(nc.status) }}
             >
               <div>
-                <strong>{p.acao}</strong>
+                <strong>{nc.item_checklist || 'Item não informado'}</strong>
                 <br />
 
-                <small>
-                  <strong>Responsável:</strong> {p.responsavel}
-                </small>
+                <span>{nc.descricao || 'Sem descrição'}</span>
                 <br />
 
-                <small>
-                  <strong>Prazo:</strong>{' '}
-                  {p.prazo
-                    ? new Date(p.prazo + 'T00:00:00').toLocaleDateString(
-                        'pt-BR'
-                      )
-                    : 'Não definido'}
+                <small style={{ color: '#64748b' }}>
+                  {new Date(nc.created_at).toLocaleDateString()}
                 </small>
               </div>
 
               <div>
                 <strong
                   style={{
-                    color: corStatus(p.status),
+                    color: corStatus(nc.status),
                     textTransform: 'uppercase',
                     fontSize: '13px'
                   }}
                 >
-                  {textoStatus(p.status)}
+                  {textoStatus(nc.status)}
                 </strong>
 
-                <br />
-                <br />
+                <br /><br />
 
                 <select
-                  value={p.status}
-                  onChange={(e) => atualizarStatus(p.id, e.target.value)}
+                  value={nc.status}
+                  onChange={(e) => atualizarStatus(nc.id, e.target.value)}
                 >
-                  <option value="pendente">Pendente</option>
-                  <option value="andamento">Em andamento</option>
+                  <option value="aberta">Aberta</option>
+                  <option value="em andamento">Em andamento</option>
                   <option value="concluida">Concluída</option>
                 </select>
               </div>
