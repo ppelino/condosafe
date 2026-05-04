@@ -1,33 +1,60 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+type Foto = {
+  id: string
+  nao_conformidade_id: string
+  foto_url: string
+  created_at?: string
+}
+
 type NaoConformidade = {
   id: string
   descricao: string | null
   status: string
   item_checklist: string | null
   created_at: string
+  fotos?: Foto[]
 }
 
 export default function NaoConformidades() {
   const [naoConformidades, setNaoConformidades] = useState<NaoConformidade[]>([])
   const [carregando, setCarregando] = useState(true)
+  const [enviandoFotoId, setEnviandoFotoId] = useState<string | null>(null)
 
   const carregarNaoConformidades = async () => {
     setCarregando(true)
 
-    const { data, error } = await supabase
+    const { data: ncData, error: ncError } = await supabase
       .from('nao_conformidades')
       .select('*')
       .order('created_at', { ascending: false })
 
-    if (error) {
-      alert('Erro ao carregar não conformidades: ' + error.message)
+    if (ncError) {
+      alert('Erro ao carregar não conformidades: ' + ncError.message)
       setCarregando(false)
       return
     }
 
-    setNaoConformidades(data || [])
+    const { data: fotosData, error: fotosError } = await supabase
+      .from('nao_conformidade_fotos')
+      .select('*')
+      .order('created_at', { ascending: true })
+
+    if (fotosError) {
+      alert('Erro ao carregar fotos: ' + fotosError.message)
+      setCarregando(false)
+      return
+    }
+
+    const listaComFotos = (ncData || []).map((nc) => ({
+      ...nc,
+      fotos: (fotosData || []).filter(
+        (foto) => foto.nao_conformidade_id === nc.id
+      )
+    }))
+
+    setNaoConformidades(listaComFotos)
     setCarregando(false)
   }
 
@@ -46,6 +73,51 @@ export default function NaoConformidades() {
       return
     }
 
+    carregarNaoConformidades()
+  }
+
+  const enviarFotos = async (ncId: string, arquivos: FileList) => {
+    if (!arquivos || arquivos.length === 0) return
+
+    setEnviandoFotoId(ncId)
+
+    for (const arquivo of Array.from(arquivos)) {
+      const extensao = arquivo.name.split('.').pop()
+      const nomeArquivo = `${ncId}/${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2)}.${extensao}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('fotos')
+        .upload(nomeArquivo, arquivo)
+
+      if (uploadError) {
+        alert('Erro ao enviar foto: ' + uploadError.message)
+        setEnviandoFotoId(null)
+        return
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('fotos')
+        .getPublicUrl(nomeArquivo)
+
+      const { error: insertError } = await supabase
+        .from('nao_conformidade_fotos')
+        .insert([
+          {
+            nao_conformidade_id: ncId,
+            foto_url: publicUrlData.publicUrl
+          }
+        ])
+
+      if (insertError) {
+        alert('Erro ao salvar foto no banco: ' + insertError.message)
+        setEnviandoFotoId(null)
+        return
+      }
+    }
+
+    setEnviandoFotoId(null)
     carregarNaoConformidades()
   }
 
@@ -86,7 +158,7 @@ export default function NaoConformidades() {
               className="list-item"
               style={{ borderLeftColor: corStatus(nc.status) }}
             >
-              <div>
+              <div style={{ width: '100%' }}>
                 <strong>{nc.item_checklist || 'Item não informado'}</strong>
                 <br />
 
@@ -94,8 +166,60 @@ export default function NaoConformidades() {
                 <br />
 
                 <small style={{ color: '#64748b' }}>
-                  {new Date(nc.created_at).toLocaleDateString()}
+                  {new Date(nc.created_at).toLocaleDateString('pt-BR')}
                 </small>
+
+                <div style={{ marginTop: '14px' }}>
+                  <strong style={{ fontSize: '13px' }}>Evidências fotográficas</strong>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: '10px',
+                      flexWrap: 'wrap',
+                      marginTop: '10px',
+                      marginBottom: '10px'
+                    }}
+                  >
+                    {nc.fotos && nc.fotos.length > 0 ? (
+                      nc.fotos.map((foto) => (
+                        <img
+                          key={foto.id}
+                          src={foto.foto_url}
+                          alt="Foto da não conformidade"
+                          style={{
+                            width: '110px',
+                            height: '90px',
+                            objectFit: 'cover',
+                            borderRadius: '10px',
+                            border: '1px solid #e5e7eb'
+                          }}
+                        />
+                      ))
+                    ) : (
+                      <small style={{ color: '#64748b' }}>
+                        Nenhuma foto enviada.
+                      </small>
+                    )}
+                  </div>
+
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => {
+                      if (e.target.files) {
+                        enviarFotos(nc.id, e.target.files)
+                      }
+                    }}
+                  />
+
+                  {enviandoFotoId === nc.id && (
+                    <small style={{ color: '#2563eb' }}>
+                      Enviando fotos...
+                    </small>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -109,7 +233,8 @@ export default function NaoConformidades() {
                   {textoStatus(nc.status)}
                 </strong>
 
-                <br /><br />
+                <br />
+                <br />
 
                 <select
                   value={nc.status}
