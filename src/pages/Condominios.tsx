@@ -18,11 +18,12 @@ export default function Condominios() {
   const carregarCondominios = async () => {
     const { data: userData } = await supabase.auth.getUser()
 
-const { data, error } = await supabase
-  .from('condominios')
-  .select('*')
-  .eq('user_id', userData.user?.id)
-  .order('created_at', { ascending: false })
+    const { data, error } = await supabase
+      .from('condominios')
+      .select('*')
+      .eq('user_id', userData.user?.id)
+      .order('created_at', { ascending: false })
+
     if (error) {
       alert('Erro ao carregar condomínios: ' + error.message)
       return
@@ -53,9 +54,9 @@ const { data, error } = await supabase
     if (editandoId) {
       const { error } = await supabase
         .from('condominios')
-       .update({ nome, cidade, estado })
-.eq('id', editandoId)
-.eq('user_id', userData.user?.id)
+        .update({ nome, cidade, estado })
+        .eq('id', editandoId)
+        .eq('user_id', userData.user?.id)
 
       if (error) {
         alert('Erro ao editar: ' + error.message)
@@ -91,11 +92,13 @@ const { data, error } = await supabase
   const excluirCondominio = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir este condomínio?')) return
 
+    const { data: userData } = await supabase.auth.getUser() // 🔥 AQUI ESTAVA FALTANDO
+
     const { error } = await supabase
       .from('condominios')
       .delete()
       .eq('id', id)
-.eq('user_id', userData.user?.id)
+      .eq('user_id', userData.user?.id)
 
     if (error) {
       alert('Erro ao excluir: ' + error.message)
@@ -181,31 +184,11 @@ const { data, error } = await supabase
                     <td>{c.estado}</td>
 
                     <td style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => editarCondominio(c)}
-                        style={{
-                          background: '#e0f2fe',
-                          color: '#0369a1',
-                          border: 'none',
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          cursor: 'pointer'
-                        }}
-                      >
+                      <button onClick={() => editarCondominio(c)}>
                         Editar
                       </button>
 
-                      <button
-                        onClick={() => excluirCondominio(c.id)}
-                        style={{
-                          background: '#fee2e2',
-                          color: '#b91c1c',
-                          border: 'none',
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          cursor: 'pointer'
-                        }}
-                      >
+                      <button onClick={() => excluirCondominio(c.id)}>
                         Excluir
                       </button>
                     </td>
