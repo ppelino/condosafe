@@ -53,8 +53,9 @@ const { data, error } = await supabase
     if (editandoId) {
       const { error } = await supabase
         .from('condominios')
-        .update({ nome, cidade, estado })
-        .eq('id', editandoId)
+       .update({ nome, cidade, estado })
+.eq('id', editandoId)
+.eq('user_id', userData.user?.id)
 
       if (error) {
         alert('Erro ao editar: ' + error.message)
