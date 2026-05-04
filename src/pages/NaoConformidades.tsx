@@ -121,6 +121,47 @@ export default function NaoConformidades() {
     carregarNaoConformidades()
   }
 
+  const obterCaminhoStorage = (fotoUrl: string) => {
+    const marcador = '/storage/v1/object/public/fotos/'
+    const partes = fotoUrl.split(marcador)
+
+    if (partes.length < 2) return null
+
+    return decodeURIComponent(partes[1])
+  }
+
+  const excluirFoto = async (foto: Foto) => {
+    if (!confirm('Deseja excluir esta foto?')) return
+
+    const caminho = obterCaminhoStorage(foto.foto_url)
+
+    if (!caminho) {
+      alert('Não foi possível localizar o caminho da foto no Storage.')
+      return
+    }
+
+    const { error: storageError } = await supabase.storage
+      .from('fotos')
+      .remove([caminho])
+
+    if (storageError) {
+      alert('Erro ao excluir foto do Storage: ' + storageError.message)
+      return
+    }
+
+    const { error: bancoError } = await supabase
+      .from('nao_conformidade_fotos')
+      .delete()
+      .eq('id', foto.id)
+
+    if (bancoError) {
+      alert('Foto removida do Storage, mas deu erro ao remover do banco: ' + bancoError.message)
+      return
+    }
+
+    carregarNaoConformidades()
+  }
+
   const corStatus = (status: string) => {
     if (status === 'aberta') return '#dc2626'
     if (status === 'em andamento') return '#f59e0b'
@@ -170,7 +211,9 @@ export default function NaoConformidades() {
                 </small>
 
                 <div style={{ marginTop: '14px' }}>
-                  <strong style={{ fontSize: '13px' }}>Evidências fotográficas</strong>
+                  <strong style={{ fontSize: '13px' }}>
+                    Evidências fotográficas
+                  </strong>
 
                   <div
                     style={{
@@ -183,18 +226,37 @@ export default function NaoConformidades() {
                   >
                     {nc.fotos && nc.fotos.length > 0 ? (
                       nc.fotos.map((foto) => (
-                        <img
-                          key={foto.id}
-                          src={foto.foto_url}
-                          alt="Foto da não conformidade"
-                          style={{
-                            width: '110px',
-                            height: '90px',
-                            objectFit: 'cover',
-                            borderRadius: '10px',
-                            border: '1px solid #e5e7eb'
-                          }}
-                        />
+                        <div key={foto.id}>
+                          <img
+                            src={foto.foto_url}
+                            alt="Foto da não conformidade"
+                            style={{
+                              width: '110px',
+                              height: '90px',
+                              objectFit: 'cover',
+                              borderRadius: '10px',
+                              border: '1px solid #e5e7eb',
+                              display: 'block',
+                              marginBottom: '6px'
+                            }}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => excluirFoto(foto)}
+                            style={{
+                              background: '#fee2e2',
+                              color: '#b91c1c',
+                              border: 'none',
+                              padding: '5px 8px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Excluir
+                          </button>
+                        </div>
                       ))
                     ) : (
                       <small style={{ color: '#64748b' }}>
