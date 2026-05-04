@@ -95,6 +95,7 @@ const { data, error } = await supabase
       .from('condominios')
       .delete()
       .eq('id', id)
+.eq('user_id', userData.user?.id)
 
     if (error) {
       alert('Erro ao excluir: ' + error.message)
