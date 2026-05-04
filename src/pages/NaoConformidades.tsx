@@ -21,6 +21,7 @@ export default function NaoConformidades() {
   const [naoConformidades, setNaoConformidades] = useState<NaoConformidade[]>([])
   const [carregando, setCarregando] = useState(true)
   const [enviandoFotoId, setEnviandoFotoId] = useState<string | null>(null)
+  const [fotoZoom, setFotoZoom] = useState<string | null>(null)
 
   const carregarNaoConformidades = async () => {
     setCarregando(true)
@@ -155,7 +156,10 @@ export default function NaoConformidades() {
       .eq('id', foto.id)
 
     if (bancoError) {
-      alert('Foto removida do Storage, mas deu erro ao remover do banco: ' + bancoError.message)
+      alert(
+        'Foto removida do Storage, mas deu erro ao remover do banco: ' +
+          bancoError.message
+      )
       return
     }
 
@@ -230,6 +234,7 @@ export default function NaoConformidades() {
                           <img
                             src={foto.foto_url}
                             alt="Foto da não conformidade"
+                            onClick={() => setFotoZoom(foto.foto_url)}
                             style={{
                               width: '110px',
                               height: '90px',
@@ -237,7 +242,8 @@ export default function NaoConformidades() {
                               borderRadius: '10px',
                               border: '1px solid #e5e7eb',
                               display: 'block',
-                              marginBottom: '6px'
+                              marginBottom: '6px',
+                              cursor: 'pointer'
                             }}
                           />
 
@@ -311,6 +317,37 @@ export default function NaoConformidades() {
           ))
         )}
       </div>
+
+      {fotoZoom && (
+        <div
+          onClick={() => setFotoZoom(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: 'rgba(0,0,0,0.85)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 9999,
+            padding: '20px',
+            boxSizing: 'border-box'
+          }}
+        >
+          <img
+            src={fotoZoom}
+            alt="Foto ampliada"
+            style={{
+              maxWidth: '95%',
+              maxHeight: '95%',
+              borderRadius: '12px',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+            }}
+          />
+        </div>
+      )}
     </>
   )
 }
