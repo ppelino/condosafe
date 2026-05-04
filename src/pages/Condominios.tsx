@@ -16,11 +16,13 @@ export default function Condominios() {
   const [editandoId, setEditandoId] = useState<string | null>(null)
 
   const carregarCondominios = async () => {
-    const { data, error } = await supabase
-      .from('condominios')
-      .select('*')
-      .order('created_at', { ascending: false })
+    const { data: userData } = await supabase.auth.getUser()
 
+const { data, error } = await supabase
+  .from('condominios')
+  .select('*')
+  .eq('user_id', userData.user?.id)
+  .order('created_at', { ascending: false })
     if (error) {
       alert('Erro ao carregar condomínios: ' + error.message)
       return
