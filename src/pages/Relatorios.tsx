@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
+type Foto = {
+  id: string
+  nao_conformidade_id: string
+  foto_url: string
+  created_at?: string
+}
+
 type NaoConformidade = {
   id: string
   item_checklist: string
   descricao: string | null
   status: string
   created_at: string
+  fotos?: Foto[]
   condominio?: {
     nome: string
   } | null
@@ -50,6 +58,25 @@ export default function Relatorios() {
       return
     }
 
+    const { data: dadosFotos, error: erroFotos } = await supabase
+      .from('nao_conformidade_fotos')
+      .select('*')
+      .order('created_at', { ascending: true })
+
+    if (erroFotos) {
+      alert('Erro ao carregar fotos das não conformidades: ' + erroFotos.message)
+      return
+    }
+
+    const ncsComFotos = ((dadosNCs || []) as unknown as NaoConformidade[]).map(
+      (nc) => ({
+        ...nc,
+        fotos: (dadosFotos || []).filter(
+          (foto) => foto.nao_conformidade_id === nc.id
+        )
+      })
+    )
+
     const { data: dadosPlanos, error: erroPlanos } = await supabase
       .from('plano_acao')
       .select(`
@@ -66,7 +93,7 @@ export default function Relatorios() {
       return
     }
 
-    setNcs((dadosNCs || []) as unknown as NaoConformidade[])
+    setNcs(ncsComFotos)
     setPlanos((dadosPlanos || []) as PlanoAcao[])
   }
 
@@ -111,7 +138,7 @@ export default function Relatorios() {
         <h1>Relatório Técnico de Inspeção</h1>
         <p>
           Documento técnico gerado automaticamente com base nas vistorias,
-          não conformidades e planos de ação corretiva.
+          não conformidades, evidências fotográficas e planos de ação corretiva.
         </p>
 
         <br />
@@ -141,15 +168,15 @@ export default function Relatorios() {
             <small>Vistorias • Não Conformidades • Plano de Ação</small>
             <br />
             <br />
-            <strong>Emissão:</strong> {new Date().toLocaleDateString()}
+            <strong>Emissão:</strong> {new Date().toLocaleDateString('pt-BR')}
           </div>
         </div>
 
         <div className="report-info">
           <p>
             <strong>Finalidade:</strong> apresentar a análise técnica das condições
-            observadas durante a vistoria, incluindo não conformidades identificadas
-            e respectivos planos de ação corretiva.
+            observadas durante a vistoria, incluindo não conformidades identificadas,
+            evidências fotográficas e respectivos planos de ação corretiva.
           </p>
           <p>
             <strong>Metodologia:</strong> inspeção visual técnica baseada em checklist
@@ -162,8 +189,8 @@ export default function Relatorios() {
         <div className="report-info">
           <p><strong>Condomínio:</strong> {condominioNome}</p>
           <p><strong>Responsável pela vistoria:</strong> ____________________________</p>
-          <p><strong>Data de emissão:</strong> {new Date().toLocaleDateString()}</p>
-          <p><strong>Tipo de documento:</strong> Relatório de inspeção, não conformidades e plano de ação</p>
+          <p><strong>Data de emissão:</strong> {new Date().toLocaleDateString('pt-BR')}</p>
+          <p><strong>Tipo de documento:</strong> Relatório de inspeção, não conformidades, evidências e plano de ação</p>
         </div>
 
         <h2>2. Resumo Executivo</h2>
@@ -218,7 +245,57 @@ export default function Relatorios() {
               <p><strong>Descrição:</strong> {nc.descricao || 'Sem descrição'}</p>
               <p><strong>Classificação:</strong> Não conforme</p>
               <p><strong>Status:</strong> {formatarStatusNC(nc.status)}</p>
-              <p><strong>Data do registro:</strong> {new Date(nc.created_at).toLocaleDateString()}</p>
+              <p>
+                <strong>Data do registro:</strong>{' '}
+                {new Date(nc.created_at).toLocaleDateString('pt-BR')}
+              </p>
+
+              <div style={{ marginTop: '12px' }}>
+                <p><strong>Evidências fotográficas:</strong></p>
+
+                {nc.fotos && nc.fotos.length > 0 ? (
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(3, 1fr)',
+                      gap: '10px',
+                      marginTop: '8px'
+                    }}
+                  >
+                    {nc.fotos.map((foto, fotoIndex) => (
+                      <div
+                        key={foto.id}
+                        style={{
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          padding: '6px',
+                          background: '#f8fafc',
+                          pageBreakInside: 'avoid'
+                        }}
+                      >
+                        <img
+                          src={foto.foto_url}
+                          alt={`Evidência ${fotoIndex + 1}`}
+                          style={{
+                            width: '100%',
+                            height: '120px',
+                            objectFit: 'cover',
+                            borderRadius: '6px',
+                            display: 'block'
+                          }}
+                        />
+                        <small style={{ color: '#64748b' }}>
+                          Evidência {fotoIndex + 1}
+                        </small>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p style={{ color: '#64748b' }}>
+                    Nenhuma evidência fotográfica anexada.
+                  </p>
+                )}
+              </div>
             </div>
           ))
         )}
@@ -237,7 +314,9 @@ export default function Relatorios() {
               <p><strong>Responsável:</strong> {p.responsavel || 'Não informado'}</p>
               <p>
                 <strong>Prazo:</strong>{' '}
-                {p.prazo ? new Date(p.prazo).toLocaleDateString() : 'Sem prazo definido'}
+                {p.prazo
+                  ? new Date(p.prazo + 'T00:00:00').toLocaleDateString('pt-BR')
+                  : 'Sem prazo definido'}
               </p>
               <p><strong>Status:</strong> {formatarStatusPlano(p.status)}</p>
             </div>
