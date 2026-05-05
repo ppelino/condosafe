@@ -1,6 +1,6 @@
-const CACHE_NAME = 'condosafe-inspector-v1'
+const CACHE_NAME = 'condosafe-inspector-v2'
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   self.skipWaiting()
 })
 
