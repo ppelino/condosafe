@@ -71,13 +71,22 @@ export default function PlanoAcao() {
 
     setSalvando(true)
 
+    const { data: userData } = await supabase.auth.getUser()
+
+    if (!userData.user) {
+      setSalvando(false)
+      alert('Usuário não autenticado.')
+      return
+    }
+
     const { error } = await supabase.from('plano_acao').insert([
       {
         nao_conformidade_id: naoConformidadeId,
         acao: acaoLimpa,
         responsavel: responsavelLimpo,
         prazo,
-        status // agora só pendente ou concluida
+        status,
+        user_id: userData.user.id
       }
     ])
 
@@ -98,10 +107,18 @@ export default function PlanoAcao() {
   }
 
   const atualizarStatus = async (id: string, novoStatus: string) => {
+    const { data: userData } = await supabase.auth.getUser()
+
+    if (!userData.user) {
+      alert('Usuário não autenticado.')
+      return
+    }
+
     const { error } = await supabase
       .from('plano_acao')
       .update({ status: novoStatus })
       .eq('id', id)
+      .eq('user_id', userData.user.id)
 
     if (error) {
       alert('Erro ao atualizar status: ' + error.message)
@@ -168,7 +185,6 @@ export default function PlanoAcao() {
           onChange={(e) => setPrazo(e.target.value)}
         />
 
-        {/* 🔥 AGORA SÓ 2 STATUS */}
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="pendente">🔴 Pendente</option>
           <option value="concluida">🟢 Concluída</option>
@@ -182,40 +198,47 @@ export default function PlanoAcao() {
       <div className="card">
         <h3>Ações Registradas ({planos.length})</h3>
 
-        {planos.map((p) => (
-          <div
-            key={p.id}
-            className="list-item"
-            style={{ borderLeftColor: corStatus(p.status) }}
-          >
-            <div>
-              <strong>{p.acao}</strong>
-              <br />
-              <small><strong>Responsável:</strong> {p.responsavel}</small>
-              <br />
-              <small>
-                <strong>Prazo:</strong>{' '}
-                {new Date(p.prazo + 'T00:00:00').toLocaleDateString('pt-BR')}
-              </small>
+        {planos.length === 0 ? (
+          <p>Nenhuma ação registrada.</p>
+        ) : (
+          planos.map((p) => (
+            <div
+              key={p.id}
+              className="list-item"
+              style={{ borderLeftColor: corStatus(p.status) }}
+            >
+              <div>
+                <strong>{p.acao}</strong>
+                <br />
+                <small>
+                  <strong>Responsável:</strong> {p.responsavel}
+                </small>
+                <br />
+                <small>
+                  <strong>Prazo:</strong>{' '}
+                  {new Date(p.prazo + 'T00:00:00').toLocaleDateString('pt-BR')}
+                </small>
+              </div>
+
+              <div>
+                <strong style={{ color: corStatus(p.status) }}>
+                  {textoStatus(p.status)}
+                </strong>
+
+                <br />
+                <br />
+
+                <select
+                  value={p.status}
+                  onChange={(e) => atualizarStatus(p.id, e.target.value)}
+                >
+                  <option value="pendente">Pendente</option>
+                  <option value="concluida">Concluída</option>
+                </select>
+              </div>
             </div>
-
-            <div>
-              <strong style={{ color: corStatus(p.status) }}>
-                {textoStatus(p.status)}
-              </strong>
-
-              <br /><br />
-
-              <select
-                value={p.status}
-                onChange={(e) => atualizarStatus(p.id, e.target.value)}
-              >
-                <option value="pendente">Pendente</option>
-                <option value="concluida">Concluída</option>
-              </select>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     </>
   )
