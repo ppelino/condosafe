@@ -29,6 +29,7 @@ export default function Vistorias() {
   const [condominios, setCondominios] = useState<Condominio[]>([])
   const [vistorias, setVistorias] = useState<Vistoria[]>([])
   const [checklists, setChecklists] = useState<ChecklistResposta[]>([])
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const [condominioId, setCondominioId] = useState('')
   const [descricao, setDescricao] = useState('')
@@ -38,11 +39,42 @@ export default function Vistorias() {
   const [resposta, setResposta] = useState<'OK' | 'NOK' | 'NA'>('OK')
   const [observacao, setObservacao] = useState('')
 
-  const carregarCondominios = async () => {
-    const { data, error } = await supabase
+  const verificarPerfil = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return false
+
+    const { data: perfil } = await supabase
+      .from('perfis')
+      .select('tipo')
+      .eq('user_id', user.id)
+      .single()
+
+    const admin = perfil?.tipo === 'admin'
+    setIsAdmin(admin)
+
+    return admin
+  }
+
+  const carregarCondominios = async (adminAtual = isAdmin) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    let query = supabase
       .from('condominios')
       .select('id, nome')
       .order('nome', { ascending: true })
+
+    if (!adminAtual) {
+      query = query.eq('user_id', user.id)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       alert('Erro ao carregar condomínios: ' + error.message)
@@ -52,8 +84,14 @@ export default function Vistorias() {
     setCondominios(data || [])
   }
 
-  const carregarVistorias = async () => {
-    const { data, error } = await supabase
+  const carregarVistorias = async (adminAtual = isAdmin) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    let query = supabase
       .from('vistorias')
       .select(`
         id,
@@ -66,6 +104,12 @@ export default function Vistorias() {
       `)
       .order('data', { ascending: false })
 
+    if (!adminAtual) {
+      query = query.eq('user_id', user.id)
+    }
+
+    const { data, error } = await query
+
     if (error) {
       alert('Erro ao carregar vistorias: ' + error.message)
       return
@@ -74,11 +118,23 @@ export default function Vistorias() {
     setVistorias((data || []) as unknown as Vistoria[])
   }
 
-  const carregarChecklists = async () => {
-    const { data, error } = await supabase
+  const carregarChecklists = async (adminAtual = isAdmin) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    let query = supabase
       .from('checklist_respostas')
       .select('*')
       .order('created_at', { ascending: false })
+
+    if (!adminAtual) {
+      query = query.eq('user_id', user.id)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       alert('Erro ao carregar checklist: ' + error.message)
@@ -88,10 +144,16 @@ export default function Vistorias() {
     setChecklists(data || [])
   }
 
+  const carregarTudo = async () => {
+    const adminAtual = await verificarPerfil()
+
+    await carregarCondominios(adminAtual)
+    await carregarVistorias(adminAtual)
+    await carregarChecklists(adminAtual)
+  }
+
   useEffect(() => {
-    carregarCondominios()
-    carregarVistorias()
-    carregarChecklists()
+    carregarTudo()
   }, [])
 
   const salvarVistoria = async () => {
@@ -100,13 +162,20 @@ export default function Vistorias() {
       return
     }
 
-    const { data: userData } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      alert('Usuário não autenticado.')
+      return
+    }
 
     const { error } = await supabase.from('vistorias').insert([
       {
         condominio_id: condominioId,
         descricao,
-        user_id: userData.user?.id
+        user_id: user.id
       }
     ])
 
@@ -118,7 +187,7 @@ export default function Vistorias() {
     alert('Vistoria salva!')
     setCondominioId('')
     setDescricao('')
-    carregarVistorias()
+    carregarVistorias(isAdmin)
   }
 
   const gerarNaoConformidade = async (
@@ -133,7 +202,14 @@ export default function Vistorias() {
       return
     }
 
-    const { data: userData } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      alert('Usuário não autenticado.')
+      return
+    }
 
     const { error } = await supabase.from('nao_conformidades').insert([
       {
@@ -144,7 +220,7 @@ export default function Vistorias() {
           observacaoChecklist ||
           `Não conformidade gerada automaticamente para o item: ${itemChecklist}`,
         status: 'aberta',
-        user_id: userData.user?.id
+        user_id: user.id
       }
     ])
 
@@ -159,7 +235,14 @@ export default function Vistorias() {
       return
     }
 
-    const { data: userData } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      alert('Usuário não autenticado.')
+      return
+    }
 
     const { error } = await supabase.from('checklist_respostas').insert([
       {
@@ -167,7 +250,7 @@ export default function Vistorias() {
         item,
         resposta,
         observacao,
-        user_id: userData.user?.id
+        user_id: user.id
       }
     ])
 
@@ -189,7 +272,7 @@ export default function Vistorias() {
     setItem('')
     setResposta('OK')
     setObservacao('')
-    carregarChecklists()
+    carregarChecklists(isAdmin)
   }
 
   return (
@@ -241,7 +324,7 @@ export default function Vistorias() {
               </div>
 
               <div style={{ fontWeight: '600' }}>
-                {new Date(v.data).toLocaleDateString()}
+                {new Date(v.data).toLocaleDateString('pt-BR')}
               </div>
             </div>
           ))
