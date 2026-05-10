@@ -12,6 +12,7 @@ import NaoConformidades from './pages/NaoConformidades'
 import PlanoAcao from './pages/PlanoAcao'
 import Relatorios from './pages/Relatorios'
 import Configuracoes from './pages/Configuracoes'
+import AdminClientes from './pages/AdminClientes'
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -71,7 +72,8 @@ export default function App() {
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        <br /><br />
+        <br />
+        <br />
 
         <input
           type="password"
@@ -80,7 +82,8 @@ export default function App() {
           onChange={(e) => setPassword(e.target.value)}
         />
 
-        <br /><br />
+        <br />
+        <br />
 
         <button onClick={handleLogin}>Entrar</button>
       </div>
@@ -98,6 +101,7 @@ export default function App() {
           <Route path="plano-acao" element={<PlanoAcao />} />
           <Route path="relatorios" element={<Relatorios />} />
           <Route path="configuracoes" element={<Configuracoes />} />
+          <Route path="admin-clientes" element={<AdminClientes />} />
         </Route>
       </Routes>
     </BrowserRouter>
