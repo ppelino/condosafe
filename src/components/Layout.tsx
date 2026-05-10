@@ -4,6 +4,29 @@ import { supabase } from '../lib/supabase'
 
 export default function Layout() {
   const [updateAvailable, setUpdateAvailable] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    const verificarAdmin = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) return
+
+      const { data: perfil } = await supabase
+        .from('perfis')
+        .select('tipo')
+        .eq('user_id', user.id)
+        .single()
+
+      if (perfil?.tipo === 'admin') {
+        setIsAdmin(true)
+      }
+    }
+
+    verificarAdmin()
+  }, [])
 
   useEffect(() => {
     const handleUpdateAvailable = () => {
@@ -44,6 +67,11 @@ export default function Layout() {
         <Link to="/nao-conformidades">Não Conformidades</Link>
         <Link to="/plano-acao">Plano de Ação</Link>
         <Link to="/relatorios">Relatórios</Link>
+
+        {isAdmin && (
+          <Link to="/admin-clientes">Admin / Clientes</Link>
+        )}
+
         <Link to="/configuracoes">Configurações</Link>
 
         <br />
