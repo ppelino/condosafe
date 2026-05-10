@@ -19,6 +19,7 @@ type NaoConformidade = {
 export default function PlanoAcao() {
   const [planos, setPlanos] = useState<Plano[]>([])
   const [naoConformidades, setNaoConformidades] = useState<NaoConformidade[]>([])
+  const [isAdmin, setIsAdmin] = useState(false)
 
   const [naoConformidadeId, setNaoConformidadeId] = useState('')
   const [acao, setAcao] = useState('')
@@ -27,11 +28,42 @@ export default function PlanoAcao() {
   const [status, setStatus] = useState('pendente')
   const [salvando, setSalvando] = useState(false)
 
-  const carregarPlanos = async () => {
-    const { data, error } = await supabase
+  const verificarPerfil = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return false
+
+    const { data: perfil } = await supabase
+      .from('perfis')
+      .select('tipo')
+      .eq('user_id', user.id)
+      .single()
+
+    const admin = perfil?.tipo === 'admin'
+    setIsAdmin(admin)
+
+    return admin
+  }
+
+  const carregarPlanos = async (adminAtual = isAdmin) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    let query = supabase
       .from('plano_acao')
       .select('*')
       .order('prazo', { ascending: true })
+
+    if (!adminAtual) {
+      query = query.eq('user_id', user.id)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       alert('Erro ao carregar plano de ação: ' + error.message)
@@ -41,11 +73,23 @@ export default function PlanoAcao() {
     setPlanos(data || [])
   }
 
-  const carregarNaoConformidades = async () => {
-    const { data, error } = await supabase
+  const carregarNaoConformidades = async (adminAtual = isAdmin) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    let query = supabase
       .from('nao_conformidades')
       .select('id, descricao, item_checklist')
       .order('created_at', { ascending: false })
+
+    if (!adminAtual) {
+      query = query.eq('user_id', user.id)
+    }
+
+    const { data, error } = await query
 
     if (error) {
       alert('Erro ao carregar não conformidades: ' + error.message)
@@ -54,6 +98,17 @@ export default function PlanoAcao() {
 
     setNaoConformidades(data || [])
   }
+
+  const carregarTudo = async () => {
+    const adminAtual = await verificarPerfil()
+
+    await carregarPlanos(adminAtual)
+    await carregarNaoConformidades(adminAtual)
+  }
+
+  useEffect(() => {
+    carregarTudo()
+  }, [])
 
   const salvarPlano = async () => {
     const acaoLimpa = acao.trim()
@@ -71,9 +126,11 @@ export default function PlanoAcao() {
 
     setSalvando(true)
 
-    const { data: userData } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-    if (!userData.user) {
+    if (!user) {
       setSalvando(false)
       alert('Usuário não autenticado.')
       return
@@ -86,7 +143,7 @@ export default function PlanoAcao() {
         responsavel: responsavelLimpo,
         prazo,
         status,
-        user_id: userData.user.id
+        user_id: user.id
       }
     ])
 
@@ -103,46 +160,35 @@ export default function PlanoAcao() {
     setPrazo('')
     setStatus('pendente')
 
-    carregarPlanos()
+    carregarPlanos(isAdmin)
   }
 
   const atualizarStatus = async (id: string, novoStatus: string) => {
-    const { data: userData } = await supabase.auth.getUser()
-
-    if (!userData.user) {
-      alert('Usuário não autenticado.')
-      return
-    }
-
     const { error } = await supabase
       .from('plano_acao')
       .update({ status: novoStatus })
       .eq('id', id)
-      .eq('user_id', userData.user.id)
 
     if (error) {
       alert('Erro ao atualizar status: ' + error.message)
       return
     }
 
-    carregarPlanos()
+    carregarPlanos(isAdmin)
   }
 
   const corStatus = (status: string) => {
     if (status === 'pendente') return '#dc2626'
+    if (status === 'em andamento') return '#f59e0b'
     return '#16a34a'
   }
 
   const textoStatus = (status: string) => {
     if (status === 'pendente') return 'Pendente'
+    if (status === 'em andamento') return 'Em andamento'
     if (status === 'concluida') return 'Concluída'
     return status
   }
-
-  useEffect(() => {
-    carregarPlanos()
-    carregarNaoConformidades()
-  }, [])
 
   return (
     <>
@@ -187,6 +233,7 @@ export default function PlanoAcao() {
 
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="pendente">🔴 Pendente</option>
+          <option value="em andamento">🟡 Em andamento</option>
           <option value="concluida">🟢 Concluída</option>
         </select>
 
@@ -209,14 +256,20 @@ export default function PlanoAcao() {
             >
               <div>
                 <strong>{p.acao}</strong>
+
                 <br />
+
                 <small>
                   <strong>Responsável:</strong> {p.responsavel}
                 </small>
+
                 <br />
+
                 <small>
                   <strong>Prazo:</strong>{' '}
-                  {new Date(p.prazo + 'T00:00:00').toLocaleDateString('pt-BR')}
+                  {new Date(
+                    p.prazo + 'T00:00:00'
+                  ).toLocaleDateString('pt-BR')}
                 </small>
               </div>
 
@@ -233,6 +286,7 @@ export default function PlanoAcao() {
                   onChange={(e) => atualizarStatus(p.id, e.target.value)}
                 >
                   <option value="pendente">Pendente</option>
+                  <option value="em andamento">Em andamento</option>
                   <option value="concluida">Concluída</option>
                 </select>
               </div>
