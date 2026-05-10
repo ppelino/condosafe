@@ -14,6 +14,7 @@ type NaoConformidade = {
   status: string
   item_checklist: string | null
   created_at: string
+  user_id?: string
   fotos?: Foto[]
 }
 
@@ -22,14 +23,49 @@ export default function NaoConformidades() {
   const [carregando, setCarregando] = useState(true)
   const [enviandoFotoId, setEnviandoFotoId] = useState<string | null>(null)
   const [fotoZoom, setFotoZoom] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
 
-  const carregarNaoConformidades = async () => {
+  const verificarPerfil = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return false
+
+    const { data: perfil } = await supabase
+      .from('perfis')
+      .select('tipo')
+      .eq('user_id', user.id)
+      .single()
+
+    const admin = perfil?.tipo === 'admin'
+    setIsAdmin(admin)
+
+    return admin
+  }
+
+  const carregarNaoConformidades = async (adminAtual = isAdmin) => {
     setCarregando(true)
 
-    const { data: ncData, error: ncError } = await supabase
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      setCarregando(false)
+      return
+    }
+
+    let queryNCs = supabase
       .from('nao_conformidades')
       .select('*')
       .order('created_at', { ascending: false })
+
+    if (!adminAtual) {
+      queryNCs = queryNCs.eq('user_id', user.id)
+    }
+
+    const { data: ncData, error: ncError } = await queryNCs
 
     if (ncError) {
       alert('Erro ao carregar não conformidades: ' + ncError.message)
@@ -37,10 +73,12 @@ export default function NaoConformidades() {
       return
     }
 
-    const { data: fotosData, error: fotosError } = await supabase
+    let queryFotos = supabase
       .from('nao_conformidade_fotos')
       .select('*')
       .order('created_at', { ascending: true })
+
+    const { data: fotosData, error: fotosError } = await queryFotos
 
     if (fotosError) {
       alert('Erro ao carregar fotos: ' + fotosError.message)
@@ -59,8 +97,13 @@ export default function NaoConformidades() {
     setCarregando(false)
   }
 
+  const carregarTudo = async () => {
+    const adminAtual = await verificarPerfil()
+    await carregarNaoConformidades(adminAtual)
+  }
+
   useEffect(() => {
-    carregarNaoConformidades()
+    carregarTudo()
   }, [])
 
   const atualizarStatus = async (id: string, novoStatus: string) => {
@@ -74,7 +117,7 @@ export default function NaoConformidades() {
       return
     }
 
-    carregarNaoConformidades()
+    carregarNaoConformidades(isAdmin)
   }
 
   const enviarFotos = async (ncId: string, arquivos: FileList) => {
@@ -119,7 +162,7 @@ export default function NaoConformidades() {
     }
 
     setEnviandoFotoId(null)
-    carregarNaoConformidades()
+    carregarNaoConformidades(isAdmin)
   }
 
   const obterCaminhoStorage = (fotoUrl: string) => {
@@ -163,7 +206,7 @@ export default function NaoConformidades() {
       return
     }
 
-    carregarNaoConformidades()
+    carregarNaoConformidades(isAdmin)
   }
 
   const corStatus = (status: string) => {
