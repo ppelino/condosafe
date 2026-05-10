@@ -239,9 +239,15 @@ export default function Dashboard() {
       ? Math.round((planosAtrasados / totalPlanos) * 100)
       : 0
 
-  return (
-    <>
-      {/* MANTÉM TODO SEU JSX ABAIXO IGUAL */}
-    </>
-  )
-}
+ return (
+  <div className="header">
+    <div className="premium-badge">CondoSafe Inspector</div>
+
+    <h1>Painel Executivo de Segurança Condominial</h1>
+
+    <p>
+      Visão estratégica das vistorias, não conformidades,
+      planos de ação e riscos por condomínio.
+    </p>
+  </div>
+)
