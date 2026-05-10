@@ -1,11 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-type RankingCondominio = {
-  nome: string
-  total: number
-}
-
 export default function Dashboard() {
   const [totalCondominios, setTotalCondominios] = useState(0)
   const [totalVistorias, setTotalVistorias] = useState(0)
@@ -16,8 +11,6 @@ export default function Dashboard() {
   const [planosPendentes, setPlanosPendentes] = useState(0)
   const [planosAtrasados, setPlanosAtrasados] = useState(0)
   const [taxaConformidade, setTaxaConformidade] = useState(0)
-  const [ranking, setRanking] = useState<RankingCondominio[]>([])
-  const [isAdmin, setIsAdmin] = useState(false)
 
   const carregarIndicadores = async () => {
     const hoje = new Date().toISOString().split('T')[0]
@@ -28,169 +21,83 @@ export default function Dashboard() {
 
     if (!user) return
 
-    // =========================
-    // VERIFICA PERFIL
-    // =========================
-
     const { data: perfil } = await supabase
       .from('perfis')
       .select('tipo')
       .eq('user_id', user.id)
-      .single()
+      .maybeSingle()
 
-    const admin = perfil?.tipo === 'admin'
-    setIsAdmin(admin)
+    const admin =
+      perfil?.tipo === 'admin' || user.email === 'edcondosafe@gmail.com'
 
-    // =========================
-    // CONDOMINIOS
-    // =========================
-
-    let queryCondominios = supabase
+    let qCondominios = supabase
       .from('condominios')
       .select('*', { count: 'exact', head: true })
 
-    if (!admin) {
-      queryCondominios = queryCondominios.eq('user_id', user.id)
-    }
+    if (!admin) qCondominios = qCondominios.eq('user_id', user.id)
 
-    const { count: condominios } = await queryCondominios
+    const { count: condominios } = await qCondominios
 
-    // =========================
-    // VISTORIAS
-    // =========================
-
-    let queryVistorias = supabase
+    let qVistorias = supabase
       .from('vistorias')
       .select('*', { count: 'exact', head: true })
 
-    if (!admin) {
-      queryVistorias = queryVistorias.eq('user_id', user.id)
-    }
+    if (!admin) qVistorias = qVistorias.eq('user_id', user.id)
 
-    const { count: vistorias } = await queryVistorias
+    const { count: vistorias } = await qVistorias
 
-    // =========================
-    // NCS
-    // =========================
-
-    let queryNCs = supabase
+    let qNCs = supabase
       .from('nao_conformidades')
       .select('*', { count: 'exact', head: true })
 
-    if (!admin) {
-      queryNCs = queryNCs.eq('user_id', user.id)
-    }
+    if (!admin) qNCs = qNCs.eq('user_id', user.id)
 
-    const { count: ncs } = await queryNCs
+    const { count: ncs } = await qNCs
 
-    // =========================
-    // NCS ABERTAS
-    // =========================
-
-    let queryAbertas = supabase
+    let qAbertas = supabase
       .from('nao_conformidades')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'aberta')
 
-    if (!admin) {
-      queryAbertas = queryAbertas.eq('user_id', user.id)
-    }
+    if (!admin) qAbertas = qAbertas.eq('user_id', user.id)
 
-    const { count: abertas } = await queryAbertas
+    const { count: abertas } = await qAbertas
 
-    // =========================
-    // NCS CONCLUÍDAS
-    // =========================
-
-    let queryConcluidas = supabase
+    let qConcluidas = supabase
       .from('nao_conformidades')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'concluida')
 
-    if (!admin) {
-      queryConcluidas = queryConcluidas.eq('user_id', user.id)
-    }
+    if (!admin) qConcluidas = qConcluidas.eq('user_id', user.id)
 
-    const { count: concluidas } = await queryConcluidas
+    const { count: concluidas } = await qConcluidas
 
-    // =========================
-    // PLANOS
-    // =========================
-
-    let queryPlanos = supabase
+    let qPlanos = supabase
       .from('plano_acao')
       .select('*', { count: 'exact', head: true })
 
-    if (!admin) {
-      queryPlanos = queryPlanos.eq('user_id', user.id)
-    }
+    if (!admin) qPlanos = qPlanos.eq('user_id', user.id)
 
-    const { count: planos } = await queryPlanos
+    const { count: planos } = await qPlanos
 
-    // =========================
-    // PLANOS PENDENTES
-    // =========================
-
-    let queryPendentes = supabase
+    let qPendentes = supabase
       .from('plano_acao')
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pendente')
 
-    if (!admin) {
-      queryPendentes = queryPendentes.eq('user_id', user.id)
-    }
+    if (!admin) qPendentes = qPendentes.eq('user_id', user.id)
 
-    const { count: pendentes } = await queryPendentes
+    const { count: pendentes } = await qPendentes
 
-    // =========================
-    // PLANOS ATRASADOS
-    // =========================
-
-    let queryAtrasados = supabase
+    let qAtrasados = supabase
       .from('plano_acao')
       .select('*', { count: 'exact', head: true })
       .lt('prazo', hoje)
       .neq('status', 'concluida')
 
-    if (!admin) {
-      queryAtrasados = queryAtrasados.eq('user_id', user.id)
-    }
+    if (!admin) qAtrasados = qAtrasados.eq('user_id', user.id)
 
-    const { count: atrasados } = await queryAtrasados
-
-    // =========================
-    // RANKING
-    // =========================
-
-    let queryRanking = supabase
-      .from('nao_conformidades')
-      .select(`
-        id,
-        condominios (
-          nome
-        )
-      `)
-
-    if (!admin) {
-      queryRanking = queryRanking.eq('user_id', user.id)
-    }
-
-    const { data: ncsPorCondominio } = await queryRanking
-
-    const mapa: Record<string, number> = {}
-
-    ;(ncsPorCondominio || []).forEach((item: any) => {
-      const nome = item.condominios?.nome || 'Não informado'
-      mapa[nome] = (mapa[nome] || 0) + 1
-    })
-
-    const rankingFormatado = Object.entries(mapa)
-      .map(([nome, total]) => ({
-        nome,
-        total,
-      }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5)
+    const { count: atrasados } = await qAtrasados
 
     setTotalCondominios(condominios || 0)
     setTotalVistorias(vistorias || 0)
@@ -200,13 +107,8 @@ export default function Dashboard() {
     setTotalPlanos(planos || 0)
     setPlanosPendentes(pendentes || 0)
     setPlanosAtrasados(atrasados || 0)
-    setRanking(rankingFormatado)
 
-    const taxa =
-      ncs && ncs > 0
-        ? ((concluidas || 0) / ncs) * 100
-        : 100
-
+    const taxa = ncs && ncs > 0 ? ((concluidas || 0) / ncs) * 100 : 100
     setTaxaConformidade(Number(taxa.toFixed(1)))
   }
 
@@ -214,40 +116,72 @@ export default function Dashboard() {
     carregarIndicadores()
   }, [])
 
-  const maiorRanking =
-    ranking.length > 0
-      ? Math.max(...ranking.map((item) => item.total))
-      : 1
+  return (
+    <>
+      <div className="header">
+        <div className="premium-badge">CondoSafe Inspector</div>
+        <h1>Painel Executivo de Segurança Condominial</h1>
+        <p>
+          Visão estratégica das vistorias, não conformidades, planos de ação e
+          riscos por condomínio.
+        </p>
+      </div>
 
-  const percentualAbertas =
-    totalNCs > 0
-      ? Math.round((ncsAbertas / totalNCs) * 100)
-      : 0
+      <div className="cards">
+        <div className="card">
+          <p>Condomínios Monitorados</p>
+          <h2>{totalCondominios}</h2>
+          <small>Unidades cadastradas</small>
+        </div>
 
-  const percentualConcluidas =
-    totalNCs > 0
-      ? Math.round((ncsConcluidas / totalNCs) * 100)
-      : 0
+        <div className="card">
+          <p>Vistorias Realizadas</p>
+          <h2>{totalVistorias}</h2>
+          <small>Inspeções registradas</small>
+        </div>
 
-  const percentualPendentes =
-    totalPlanos > 0
-      ? Math.round((planosPendentes / totalPlanos) * 100)
-      : 0
+        <div className="card">
+          <p>Não Conformidades</p>
+          <h2>{totalNCs}</h2>
+          <small>Ocorrências identificadas</small>
+        </div>
 
-  const percentualAtrasados =
-    totalPlanos > 0
-      ? Math.round((planosAtrasados / totalPlanos) * 100)
-      : 0
+        <div className="card">
+          <p>NCs Abertas</p>
+          <h2>{ncsAbertas}</h2>
+          <small>Pendentes de tratativa</small>
+        </div>
 
- return (
-  <div className="header">
-    <div className="premium-badge">CondoSafe Inspector</div>
+        <div className="card">
+          <p>NCs Concluídas</p>
+          <h2>{ncsConcluidas}</h2>
+          <small>Ocorrências resolvidas</small>
+        </div>
 
-    <h1>Painel Executivo de Segurança Condominial</h1>
+        <div className="card">
+          <p>Planos de Ação</p>
+          <h2>{totalPlanos}</h2>
+          <small>Ações corretivas cadastradas</small>
+        </div>
 
-    <p>
-      Visão estratégica das vistorias, não conformidades,
-      planos de ação e riscos por condomínio.
-    </p>
-  </div>
-)
+        <div className="card">
+          <p>Planos Pendentes</p>
+          <h2>{planosPendentes}</h2>
+          <small>Aguardando execução</small>
+        </div>
+
+        <div className="card">
+          <p>Planos Atrasados</p>
+          <h2>{planosAtrasados}</h2>
+          <small>Exigem atenção imediata</small>
+        </div>
+
+        <div className="card">
+          <p>Índice de Conformidade</p>
+          <h2>{taxaConformidade}%</h2>
+          <small>NCs concluídas sobre o total</small>
+        </div>
+      </div>
+    </>
+  )
+}
