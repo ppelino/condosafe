@@ -14,11 +14,16 @@ export default function Layout() {
 
       if (!user) return
 
+      if (user.email === 'edcondosafe@gmail.com') {
+        setIsAdmin(true)
+        return
+      }
+
       const { data: perfil } = await supabase
         .from('perfis')
         .select('tipo')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
       if (perfil?.tipo === 'admin') {
         setIsAdmin(true)
