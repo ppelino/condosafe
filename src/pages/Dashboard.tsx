@@ -40,10 +40,6 @@ export default function Dashboard() {
 
     setIsAdmin(admin)
 
-    // =========================
-    // CONDOMINIOS
-    // =========================
-
     let qCondominios = supabase
       .from('condominios')
       .select('*', { count: 'exact', head: true })
@@ -53,10 +49,6 @@ export default function Dashboard() {
     }
 
     const { count: condominios } = await qCondominios
-
-    // =========================
-    // VISTORIAS
-    // =========================
 
     let qVistorias = supabase
       .from('vistorias')
@@ -68,10 +60,6 @@ export default function Dashboard() {
 
     const { count: vistorias } = await qVistorias
 
-    // =========================
-    // NÃO CONFORMIDADES
-    // =========================
-
     let qNCs = supabase
       .from('nao_conformidades')
       .select('*', { count: 'exact', head: true })
@@ -81,10 +69,6 @@ export default function Dashboard() {
     }
 
     const { count: ncs } = await qNCs
-
-    // =========================
-    // NCS ABERTAS
-    // =========================
 
     let qAbertas = supabase
       .from('nao_conformidades')
@@ -97,10 +81,6 @@ export default function Dashboard() {
 
     const { count: abertas } = await qAbertas
 
-    // =========================
-    // NCS CONCLUÍDAS
-    // =========================
-
     let qConcluidas = supabase
       .from('nao_conformidades')
       .select('*', { count: 'exact', head: true })
@@ -112,10 +92,6 @@ export default function Dashboard() {
 
     const { count: concluidas } = await qConcluidas
 
-    // =========================
-    // PLANOS
-    // =========================
-
     let qPlanos = supabase
       .from('plano_acao')
       .select('*', { count: 'exact', head: true })
@@ -125,10 +101,6 @@ export default function Dashboard() {
     }
 
     const { count: planos } = await qPlanos
-
-    // =========================
-    // PLANOS PENDENTES
-    // =========================
 
     let qPendentes = supabase
       .from('plano_acao')
@@ -141,10 +113,6 @@ export default function Dashboard() {
 
     const { count: pendentes } = await qPendentes
 
-    // =========================
-    // PLANOS ATRASADOS
-    // =========================
-
     let qAtrasados = supabase
       .from('plano_acao')
       .select('*', { count: 'exact', head: true })
@@ -156,10 +124,6 @@ export default function Dashboard() {
     }
 
     const { count: atrasados } = await qAtrasados
-
-    // =========================
-    // RANKING
-    // =========================
 
     let qRanking = supabase
       .from('nao_conformidades')
@@ -420,4 +384,3 @@ export default function Dashboard() {
     </>
   )
 }
-```
