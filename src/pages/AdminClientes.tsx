@@ -46,9 +46,7 @@ export default function AdminClientes() {
     valor: string | number | boolean | null
   ) => {
     setPerfis((lista) =>
-      lista.map((p) =>
-        p.id === id ? { ...p, [campo]: valor } : p
-      )
+      lista.map((p) => (p.id === id ? { ...p, [campo]: valor } : p))
     )
   }
 
@@ -57,7 +55,7 @@ export default function AdminClientes() {
 
     const dataFormatada =
       perfil.data_expiracao && perfil.data_expiracao !== ''
-        ? `${perfil.data_expiracao.substring(0, 10)}T23:59:59`
+        ? perfil.data_expiracao.substring(0, 10)
         : null
 
     const { error } = await supabase
@@ -68,7 +66,7 @@ export default function AdminClientes() {
         plano: perfil.plano,
         limite_condominios: Number(perfil.limite_condominios ?? 0),
         limite_usuarios: Number(perfil.limite_usuarios ?? 0),
-        ativo: perfil.ativo,
+        ativo: perfil.ativo === true,
         data_expiracao: dataFormatada
       })
       .eq('id', perfil.id)
@@ -113,12 +111,8 @@ export default function AdminClientes() {
     <>
       <div className="header">
         <div className="premium-badge">CondoSafe Inspector</div>
-
         <h1>Administração de Clientes</h1>
-
-        <p>
-          Controle de usuários, planos, limites, status de acesso e vencimento.
-        </p>
+        <p>Controle de usuários, planos, limites, status de acesso e vencimento.</p>
       </div>
 
       <div className="card">
@@ -160,11 +154,7 @@ export default function AdminClientes() {
                     <small>ID: {p.user_id.substring(0, 8)}...</small>
                   </div>
 
-                  <strong
-                    style={{
-                      color: p.ativo ? '#16a34a' : '#dc2626'
-                    }}
-                  >
+                  <strong style={{ color: p.ativo ? '#16a34a' : '#dc2626' }}>
                     {p.ativo ? 'Ativo' : 'Inativo'}
                   </strong>
                 </div>
@@ -172,17 +162,13 @@ export default function AdminClientes() {
                 <label>Nome</label>
                 <input
                   value={p.nome || ''}
-                  onChange={(e) =>
-                    atualizarCampo(p.id, 'nome', e.target.value)
-                  }
+                  onChange={(e) => atualizarCampo(p.id, 'nome', e.target.value)}
                 />
 
                 <label>Tipo</label>
                 <select
                   value={p.tipo || 'cliente'}
-                  onChange={(e) =>
-                    atualizarCampo(p.id, 'tipo', e.target.value)
-                  }
+                  onChange={(e) => atualizarCampo(p.id, 'tipo', e.target.value)}
                 >
                   <option value="cliente">Cliente</option>
                   <option value="admin">Admin</option>
@@ -239,13 +225,9 @@ export default function AdminClientes() {
 
                 <label>Status</label>
                 <select
-                  value={String(p.ativo)}
+                  value={String(p.ativo === true)}
                   onChange={(e) =>
-                    atualizarCampo(
-                      p.id,
-                      'ativo',
-                      e.target.value === 'true'
-                    )
+                    atualizarCampo(p.id, 'ativo', e.target.value === 'true')
                   }
                 >
                   <option value="true">Ativo</option>
@@ -272,10 +254,7 @@ export default function AdminClientes() {
                 <button
                   onClick={() => salvarPerfil(p)}
                   disabled={salvandoId === p.id}
-                  style={{
-                    marginTop: '14px',
-                    width: '100%'
-                  }}
+                  style={{ marginTop: '14px', width: '100%' }}
                 >
                   {salvandoId === p.id ? 'Salvando...' : 'Salvar Cliente'}
                 </button>
