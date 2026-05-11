@@ -15,6 +15,9 @@ export default function Condominios() {
   const [condominios, setCondominios] = useState<Condominio[]>([])
   const [editandoId, setEditandoId] = useState<string | null>(null)
 
+  const [limiteCondominios, setLimiteCondominios] = useState<number>(0)
+  const [tipoUsuario, setTipoUsuario] = useState('cliente')
+
   const carregarCondominios = async () => {
     const { data, error } = await supabase
       .from('condominios')
@@ -29,8 +32,28 @@ export default function Condominios() {
     setCondominios(data || [])
   }
 
+  const carregarPerfil = async () => {
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    const { data: perfil } = await supabase
+      .from('perfis')
+      .select('tipo, limite_condominios')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (perfil) {
+      setTipoUsuario(perfil.tipo || 'cliente')
+      setLimiteCondominios(perfil.limite_condominios || 0)
+    }
+  }
+
   useEffect(() => {
     carregarCondominios()
+    carregarPerfil()
   }, [])
 
   const limparFormulario = () => {
@@ -53,6 +76,23 @@ export default function Condominios() {
       return
     }
 
+    // =========================
+    // BLOQUEIO DE LIMITE
+    // =========================
+
+    if (
+      !editandoId &&
+      tipoUsuario !== 'admin' &&
+      condominios.length >= limiteCondominios
+    ) {
+      alert('Limite do plano atingido.')
+      return
+    }
+
+    // =========================
+    // EDITAR
+    // =========================
+
     if (editandoId) {
       const { error } = await supabase
         .from('condominios')
@@ -64,6 +104,10 @@ export default function Condominios() {
         return
       }
     } else {
+      // =========================
+      // NOVO CADASTRO
+      // =========================
+
       const { error } = await supabase.from('condominios').insert([
         {
           nome,
@@ -117,9 +161,24 @@ export default function Condominios() {
       <div className="card">
         <h3>{editandoId ? 'Editar Condomínio' : 'Cadastrar Condomínio'}</h3>
 
+        <div
+          style={{
+            marginBottom: '16px',
+            padding: '10px',
+            borderRadius: '10px',
+            background: '#eff6ff',
+            color: '#1e3a8a',
+            fontWeight: 600
+          }}
+        >
+          Plano: {tipoUsuario.toUpperCase()} | Limite de condomínios:{' '}
+          {tipoUsuario === 'admin' ? 'ILIMITADO' : limiteCondominios}
+        </div>
+
         <div className="form-card-grid">
           <div className="form-mini-card">
             <label>Nome do Condomínio</label>
+
             <input
               placeholder="Ex: Condomínio Safira"
               value={nome}
@@ -129,6 +188,7 @@ export default function Condominios() {
 
           <div className="form-mini-card">
             <label>Cidade</label>
+
             <input
               placeholder="Ex: Suzano"
               value={cidade}
@@ -138,6 +198,7 @@ export default function Condominios() {
 
           <div className="form-mini-card">
             <label>Estado</label>
+
             <input
               placeholder="Ex: SP"
               value={estado}
