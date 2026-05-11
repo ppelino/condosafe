@@ -151,7 +151,29 @@ useEffect(() => {
       </div>
     )
   }
+if (bloqueado) {
+  return (
+    <div className="login-page">
+      <h1>Plano Expirado</h1>
 
+      <p>
+        Seu acesso foi bloqueado.
+      </p>
+
+      <p>
+        Entre em contato com o administrador.
+      </p>
+
+      <button
+        onClick={async () => {
+          await supabase.auth.signOut()
+        }}
+      >
+        Sair
+      </button>
+    </div>
+  )
+}
   return (
     <BrowserRouter>
       <Routes>
