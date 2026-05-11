@@ -8,6 +8,8 @@ export default function Layout() {
 
   useEffect(() => {
     const verificarAdmin = async () => {
+      setIsAdmin(false)
+
       const {
         data: { user },
       } = await supabase.auth.getUser()
@@ -19,15 +21,19 @@ export default function Layout() {
         return
       }
 
-      const { data: perfil } = await supabase
+      const { data: perfil, error } = await supabase
         .from('perfis')
         .select('tipo')
         .eq('user_id', user.id)
         .maybeSingle()
 
-      if (perfil?.tipo === 'admin') {
-        setIsAdmin(true)
+      if (error) {
+        console.error('Erro ao verificar perfil:', error)
+        setIsAdmin(false)
+        return
       }
+
+      setIsAdmin(perfil?.tipo === 'admin')
     }
 
     verificarAdmin()
@@ -46,6 +52,7 @@ export default function Layout() {
   }, [])
 
   const logout = async () => {
+    setIsAdmin(false)
     await supabase.auth.signOut()
   }
 
