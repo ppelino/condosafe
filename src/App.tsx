@@ -92,7 +92,37 @@ export default function App() {
   }
 
   if (loading) return <p>Carregando...</p>
+const [bloqueado, setBloqueado] = useState(false)
 
+useEffect(() => {
+  const verificarExpiracao = async () => {
+    if (!user) return
+
+    const { data: perfil } = await supabase
+      .from('perfis')
+      .select('ativo, data_expiracao')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (!perfil) return
+
+    if (perfil.ativo === false) {
+      setBloqueado(true)
+      return
+    }
+
+    if (perfil.data_expiracao) {
+      const hoje = new Date()
+      const vencimento = new Date(perfil.data_expiracao)
+
+      if (vencimento < hoje) {
+        setBloqueado(true)
+      }
+    }
+  }
+
+  verificarExpiracao()
+}, [user])
   if (!user) {
     return (
       <div className="login-page">
