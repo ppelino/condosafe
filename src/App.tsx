@@ -117,9 +117,12 @@ export default function App() {
 
       if (perfil.data_expiracao) {
         const hoje = new Date()
-        const vencimento = new Date(perfil.data_expiracao)
+hoje.setHours(0, 0, 0, 0)
 
-        if (vencimento < hoje) {
+const vencimento = new Date(perfil.data_expiracao)
+vencimento.setHours(0, 0, 0, 0)
+
+if (vencimento <= hoje) {
           setBloqueado(true)
           setVerificandoPlano(false)
           return
