@@ -46,14 +46,7 @@ export default function AdminClientes() {
     valor: string | number | boolean | null
   ) => {
     setPerfis((lista) =>
-      lista.map((p) =>
-        p.id === id
-          ? {
-              ...p,
-              [campo]: valor
-            }
-          : p
-      )
+      lista.map((p) => (p.id === id ? { ...p, [campo]: valor } : p))
     )
   }
 
@@ -110,6 +103,14 @@ export default function AdminClientes() {
     }
   }
 
+  const statusTexto = (ativo: boolean | null) => {
+    return ativo ? 'Ativo' : 'Inativo'
+  }
+
+  const statusCor = (ativo: boolean | null) => {
+    return ativo ? '#16a34a' : '#dc2626'
+  }
+
   return (
     <>
       <div className="header">
@@ -128,127 +129,160 @@ export default function AdminClientes() {
         ) : perfis.length === 0 ? (
           <p>Nenhum perfil cadastrado.</p>
         ) : (
-          <div className="table-wrapper">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>Tipo</th>
-                  <th>Plano</th>
-                  <th>Limite Condomínios</th>
-                  <th>Limite Usuários</th>
-                  <th>Ativo</th>
-                  <th>Vencimento</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '18px',
+              marginTop: '18px'
+            }}
+          >
+            {perfis.map((p) => (
+              <div
+                key={p.id}
+                style={{
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '18px',
+                  padding: '18px',
+                  background: '#f8fafc',
+                  boxShadow: '0 10px 25px rgba(15, 23, 42, 0.06)'
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '12px',
+                    marginBottom: '16px'
+                  }}
+                >
+                  <div>
+                    <strong style={{ fontSize: '17px' }}>
+                      {p.nome || 'Cliente sem nome'}
+                    </strong>
+                    <br />
+                    <small style={{ color: '#64748b' }}>
+                      ID: {p.user_id.substring(0, 8)}...
+                    </small>
+                  </div>
 
-              <tbody>
-                {perfis.map((p) => (
-                  <tr key={p.id}>
-                    <td>
-                      <input
-                        value={p.nome || ''}
-                        onChange={(e) =>
-                          atualizarCampo(p.id, 'nome', e.target.value)
-                        }
-                      />
-                    </td>
+                  <span
+                    style={{
+                      color: statusCor(p.ativo),
+                      fontWeight: 700,
+                      fontSize: '13px'
+                    }}
+                  >
+                    {statusTexto(p.ativo)}
+                  </span>
+                </div>
 
-                    <td>
-                      <select
-                        value={p.tipo || 'cliente'}
-                        onChange={(e) =>
-                          atualizarCampo(p.id, 'tipo', e.target.value)
-                        }
-                      >
-                        <option value="cliente">Cliente</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </td>
+                <label>Nome</label>
+                <input
+                  value={p.nome || ''}
+                  onChange={(e) =>
+                    atualizarCampo(p.id, 'nome', e.target.value)
+                  }
+                />
 
-                    <td>
-                      <select
-                        value={p.plano || 'basico'}
-                        onChange={(e) => aplicarPlano(p.id, e.target.value)}
-                      >
-                        <option value="basico">Básico</option>
-                        <option value="profissional">Profissional</option>
-                        <option value="premium">Premium</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </td>
+                <label>Tipo</label>
+                <select
+                  value={p.tipo || 'cliente'}
+                  onChange={(e) =>
+                    atualizarCampo(p.id, 'tipo', e.target.value)
+                  }
+                >
+                  <option value="cliente">Cliente</option>
+                  <option value="admin">Admin</option>
+                </select>
 
-                    <td>
-                      <input
-                        type="number"
-                        value={p.limite_condominios ?? 0}
-                        onChange={(e) =>
-                          atualizarCampo(
-                            p.id,
-                            'limite_condominios',
-                            Number(e.target.value)
-                          )
-                        }
-                      />
-                    </td>
+                <label>Plano</label>
+                <select
+                  value={p.plano || 'basico'}
+                  onChange={(e) => aplicarPlano(p.id, e.target.value)}
+                >
+                  <option value="basico">Básico</option>
+                  <option value="profissional">Profissional</option>
+                  <option value="premium">Premium</option>
+                  <option value="admin">Admin</option>
+                </select>
 
-                    <td>
-                      <input
-                        type="number"
-                        value={p.limite_usuarios ?? 0}
-                        onChange={(e) =>
-                          atualizarCampo(
-                            p.id,
-                            'limite_usuarios',
-                            Number(e.target.value)
-                          )
-                        }
-                      />
-                    </td>
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr',
+                    gap: '12px'
+                  }}
+                >
+                  <div>
+                    <label>Limite Condomínios</label>
+                    <input
+                      type="number"
+                      value={p.limite_condominios ?? 0}
+                      onChange={(e) =>
+                        atualizarCampo(
+                          p.id,
+                          'limite_condominios',
+                          Number(e.target.value)
+                        )
+                      }
+                    />
+                  </div>
 
-                    <td>
-                      <select
-                        value={p.ativo ? 'true' : 'false'}
-                        onChange={(e) =>
-                          atualizarCampo(p.id, 'ativo', e.target.value === 'true')
-                        }
-                      >
-                        <option value="true">Ativo</option>
-                        <option value="false">Inativo</option>
-                      </select>
-                    </td>
+                  <div>
+                    <label>Limite Usuários</label>
+                    <input
+                      type="number"
+                      value={p.limite_usuarios ?? 0}
+                      onChange={(e) =>
+                        atualizarCampo(
+                          p.id,
+                          'limite_usuarios',
+                          Number(e.target.value)
+                        )
+                      }
+                    />
+                  </div>
+                </div>
 
-                    <td>
-                      <input
-                        type="date"
-                        value={
-                          p.data_expiracao
-                            ? p.data_expiracao.substring(0, 10)
-                            : ''
-                        }
-                        onChange={(e) =>
-                          atualizarCampo(
-                            p.id,
-                            'data_expiracao',
-                            e.target.value || null
-                          )
-                        }
-                      />
-                    </td>
+                <label>Status</label>
+                <select
+                  value={p.ativo ? 'true' : 'false'}
+                  onChange={(e) =>
+                    atualizarCampo(p.id, 'ativo', e.target.value === 'true')
+                  }
+                >
+                  <option value="true">Ativo</option>
+                  <option value="false">Inativo</option>
+                </select>
 
-                    <td>
-                      <button
-                        onClick={() => salvarPerfil(p)}
-                        disabled={salvandoId === p.id}
-                      >
-                        {salvandoId === p.id ? 'Salvando...' : 'Salvar'}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                <label>Data de vencimento</label>
+                <input
+                  type="date"
+                  value={
+                    p.data_expiracao
+                      ? p.data_expiracao.substring(0, 10)
+                      : ''
+                  }
+                  onChange={(e) =>
+                    atualizarCampo(
+                      p.id,
+                      'data_expiracao',
+                      e.target.value || null
+                    )
+                  }
+                />
+
+                <button
+                  onClick={() => salvarPerfil(p)}
+                  disabled={salvandoId === p.id}
+                  style={{ marginTop: '14px', width: '100%' }}
+                >
+                  {salvandoId === p.id ? 'Salvando...' : 'Salvar Cliente'}
+                </button>
+              </div>
+            ))}
           </div>
         )}
       </div>
