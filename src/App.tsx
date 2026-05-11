@@ -51,6 +51,8 @@ export default function App() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(true)
+  const [bloqueado, setBloqueado] = useState(false)
+  const [verificandoPlano, setVerificandoPlano] = useState(false)
 
   useEffect(() => {
     const checkUser = async () => {
@@ -69,12 +71,67 @@ export default function App() {
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      setBloqueado(false)
     })
 
     return () => {
       listener.subscription.unsubscribe()
     }
   }, [])
+
+  useEffect(() => {
+    const verificarExpiracao = async () => {
+      if (!user) return
+
+      setVerificandoPlano(true)
+
+      if (user.email === 'edcondosafe@gmail.com') {
+        setBloqueado(false)
+        setVerificandoPlano(false)
+        return
+      }
+
+      const { data: perfil, error } = await supabase
+        .from('perfis')
+        .select('ativo, data_expiracao')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Erro ao verificar plano:', error)
+        setVerificandoPlano(false)
+        return
+      }
+
+      if (!perfil) {
+        setBloqueado(true)
+        setVerificandoPlano(false)
+        return
+      }
+
+      if (perfil.ativo === false) {
+        setBloqueado(true)
+        setVerificandoPlano(false)
+        return
+      }
+
+      if (perfil.data_expiracao) {
+        const hoje = new Date()
+        const vencimento = new Date(perfil.data_expiracao)
+
+        if (vencimento < hoje) {
+          setBloqueado(true)
+          setVerificandoPlano(false)
+          return
+        }
+      }
+
+      setBloqueado(false)
+      setVerificandoPlano(false)
+    }
+
+    verificarExpiracao()
+  }, [user])
 
   const handleLogin = async () => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -91,38 +148,13 @@ export default function App() {
     setPassword('')
   }
 
-  if (loading) return <p>Carregando...</p>
-const [bloqueado, setBloqueado] = useState(false)
-
-useEffect(() => {
-  const verificarExpiracao = async () => {
-    if (!user) return
-
-    const { data: perfil } = await supabase
-      .from('perfis')
-      .select('ativo, data_expiracao')
-      .eq('user_id', user.id)
-      .maybeSingle()
-
-    if (!perfil) return
-
-    if (perfil.ativo === false) {
-      setBloqueado(true)
-      return
-    }
-
-    if (perfil.data_expiracao) {
-      const hoje = new Date()
-      const vencimento = new Date(perfil.data_expiracao)
-
-      if (vencimento < hoje) {
-        setBloqueado(true)
-      }
-    }
+  const sair = async () => {
+    setBloqueado(false)
+    await supabase.auth.signOut()
   }
 
-  verificarExpiracao()
-}, [user])
+  if (loading) return <p>Carregando...</p>
+
   if (!user) {
     return (
       <div className="login-page">
@@ -151,29 +183,25 @@ useEffect(() => {
       </div>
     )
   }
-if (bloqueado) {
-  return (
-    <div className="login-page">
-      <h1>Plano Expirado</h1>
 
-      <p>
-        Seu acesso foi bloqueado.
-      </p>
+  if (verificandoPlano) {
+    return <p>Verificando plano...</p>
+  }
 
-      <p>
-        Entre em contato com o administrador.
-      </p>
+  if (bloqueado) {
+    return (
+      <div className="login-page">
+        <h1>Plano Expirado</h1>
 
-      <button
-        onClick={async () => {
-          await supabase.auth.signOut()
-        }}
-      >
-        Sair
-      </button>
-    </div>
-  )
-}
+        <p>Seu acesso foi bloqueado.</p>
+
+        <p>Entre em contato com o administrador.</p>
+
+        <button onClick={sair}>Sair</button>
+      </div>
+    )
+  }
+
   return (
     <BrowserRouter>
       <Routes>
