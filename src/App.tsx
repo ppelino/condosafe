@@ -188,7 +188,11 @@ if (vencimento <= hoje) {
   }
 
   if (verificandoPlano) {
-    return <p>Verificando plano...</p>
+   return (
+  <div className="login-page">
+    <h1>Verificando Plano...</h1>
+  </div>
+)
   }
 
   if (bloqueado) {
@@ -200,7 +204,14 @@ if (vencimento <= hoje) {
 
         <p>Entre em contato com o administrador.</p>
 
-        <button onClick={sair}>Sair</button>
+       <button
+  onClick={async () => {
+    await sair()
+    window.location.reload()
+  }}
+>
+  Sair
+</button> 
       </div>
     )
   }
