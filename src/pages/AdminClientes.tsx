@@ -257,7 +257,7 @@ export default function AdminClientes() {
                 <input
                   type="text"
                   placeholder="dd/mm/aaaa"
-                  value={dataParaBR(p.data_expiracao)}
+                 value={p.data_expiracao || ''}
                   onChange={(e) =>
                     atualizarCampo(
                       p.id,
