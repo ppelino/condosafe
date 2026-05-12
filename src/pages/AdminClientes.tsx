@@ -18,9 +18,26 @@ export default function AdminClientes() {
   const [carregando, setCarregando] = useState(true)
   const [salvandoId, setSalvandoId] = useState<string | null>(null)
 
-  const formatarDataInput = (data: string | null) => {
+  const dataParaBR = (data: string | null) => {
     if (!data) return ''
-    return data.substring(0, 10)
+    const iso = data.substring(0, 10)
+    const [ano, mes, dia] = iso.split('-')
+    if (!ano || !mes || !dia) return ''
+    return `${dia}/${mes}/${ano}`
+  }
+
+  const dataParaISO = (dataBR: string | null) => {
+    if (!dataBR) return null
+    const partes = dataBR.trim().split('/')
+    if (partes.length !== 3) return null
+
+    const [dia, mes, ano] = partes
+
+    if (dia.length !== 2 || mes.length !== 2 || ano.length !== 4) {
+      return null
+    }
+
+    return `${ano}-${mes}-${dia}`
   }
 
   const carregarPerfis = async () => {
@@ -58,9 +75,7 @@ export default function AdminClientes() {
   const salvarPerfil = async (perfil: Perfil) => {
     setSalvandoId(perfil.id)
 
-    const dataFormatada = perfil.data_expiracao
-      ? perfil.data_expiracao.substring(0, 10)
-      : null
+    const dataFormatada = dataParaISO(perfil.data_expiracao)
 
     const { error } = await supabase
       .from('perfis')
@@ -84,7 +99,7 @@ export default function AdminClientes() {
     }
 
     alert('Cliente atualizado com sucesso!')
-    await carregarPerfis()
+    carregarPerfis()
   }
 
   const aplicarPlano = (id: string, plano: string) => {
@@ -240,8 +255,9 @@ export default function AdminClientes() {
 
                 <label>Data de vencimento</label>
                 <input
-                  type="date"
-                  value={formatarDataInput(p.data_expiracao)}
+                  type="text"
+                  placeholder="dd/mm/aaaa"
+                  value={dataParaBR(p.data_expiracao)}
                   onChange={(e) =>
                     atualizarCampo(
                       p.id,
