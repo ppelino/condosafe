@@ -79,6 +79,7 @@ export default function Layout() {
         <Link to="/nao-conformidades">Não Conformidades</Link>
         <Link to="/plano-acao">Plano de Ação</Link>
         <Link to="/relatorios">Relatórios</Link>
+        <Link to="/planos">Planos</Link>
 
         {isAdmin && (
           <Link to="/admin-clientes">Admin / Clientes</Link>
