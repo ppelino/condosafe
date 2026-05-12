@@ -235,21 +235,23 @@ export default function AdminClientes() {
                 </select>
 
                 <label>Data de vencimento</label>
-                <input
-                  type="date"
-                  value={
-                    p.data_expiracao
-                      ? p.data_expiracao.substring(0, 10)
-                      : ''
-                  }
-                  onChange={(e) =>
-                    atualizarCampo(
-                      p.id,
-                      'data_expiracao',
-                      e.target.value || null
-                    )
-                  }
-                />
+               <input
+  type="date"
+  value={
+    p.data_expiracao
+      ? new Date(p.data_expiracao)
+          .toISOString()
+          .split('T')[0]
+      : ''
+  }
+  onChange={(e) =>
+    atualizarCampo(
+      p.id,
+      'data_expiracao',
+      e.target.value
+    )
+  }
+/>
 
                 <button
                   onClick={() => salvarPerfil(p)}
