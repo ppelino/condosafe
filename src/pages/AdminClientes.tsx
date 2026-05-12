@@ -18,6 +18,11 @@ export default function AdminClientes() {
   const [carregando, setCarregando] = useState(true)
   const [salvandoId, setSalvandoId] = useState<string | null>(null)
 
+  const formatarDataInput = (data: string | null) => {
+    if (!data) return ''
+    return data.substring(0, 10)
+  }
+
   const carregarPerfis = async () => {
     setCarregando(true)
 
@@ -53,10 +58,9 @@ export default function AdminClientes() {
   const salvarPerfil = async (perfil: Perfil) => {
     setSalvandoId(perfil.id)
 
-    const dataFormatada =
-      perfil.data_expiracao && perfil.data_expiracao !== ''
-        ? perfil.data_expiracao.substring(0, 10)
-        : null
+    const dataFormatada = perfil.data_expiracao
+      ? perfil.data_expiracao.substring(0, 10)
+      : null
 
     const { error } = await supabase
       .from('perfis')
@@ -80,7 +84,7 @@ export default function AdminClientes() {
     }
 
     alert('Cliente atualizado com sucesso!')
-    carregarPerfis()
+    await carregarPerfis()
   }
 
   const aplicarPlano = (id: string, plano: string) => {
@@ -235,23 +239,17 @@ export default function AdminClientes() {
                 </select>
 
                 <label>Data de vencimento</label>
-               <input
-  type="date"
-  value={
-    p.data_expiracao
-      ? new Date(p.data_expiracao)
-          .toISOString()
-          .split('T')[0]
-      : ''
-  }
-  onChange={(e) =>
-    atualizarCampo(
-      p.id,
-      'data_expiracao',
-      e.target.value
-    )
-  }
-/>
+                <input
+                  type="date"
+                  value={formatarDataInput(p.data_expiracao)}
+                  onChange={(e) =>
+                    atualizarCampo(
+                      p.id,
+                      'data_expiracao',
+                      e.target.value || null
+                    )
+                  }
+                />
 
                 <button
                   onClick={() => salvarPerfil(p)}
