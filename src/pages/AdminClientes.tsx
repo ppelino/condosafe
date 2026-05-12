@@ -18,48 +18,9 @@ export default function AdminClientes() {
   const [carregando, setCarregando] = useState(true)
   const [salvandoId, setSalvandoId] = useState<string | null>(null)
 
-  const converterParaBR = (data: string | null) => {
+  const normalizarDataISO = (data: string | null) => {
     if (!data) return ''
-    if (data.includes('/')) return data
-
-    const somenteData = data.substring(0, 10)
-    const [ano, mes, dia] = somenteData.split('-')
-
-    if (!ano || !mes || !dia) return ''
-
-    return `${dia}/${mes}/${ano}`
-  }
-
-  const converterParaISO = (data: string | null) => {
-    if (!data) return null
-
-    const texto = data.trim()
-
-    if (texto === '') return null
-
-    if (texto.includes('-')) {
-      return texto.substring(0, 10)
-    }
-
-    const partes = texto.split('/')
-
-    if (partes.length !== 3) {
-      alert('Data inválida. Use o formato dd/mm/aaaa.')
-      return null
-    }
-
-    const [dia, mes, ano] = partes
-
-    if (
-      dia.length !== 2 ||
-      mes.length !== 2 ||
-      ano.length !== 4
-    ) {
-      alert('Data inválida. Use o formato dd/mm/aaaa.')
-      return null
-    }
-
-    return `${ano}-${mes}-${dia}`
+    return data.substring(0, 10)
   }
 
   const carregarPerfis = async () => {
@@ -78,7 +39,7 @@ export default function AdminClientes() {
 
     const perfisFormatados = (data || []).map((p) => ({
       ...p,
-      data_expiracao: converterParaBR(p.data_expiracao)
+      data_expiracao: normalizarDataISO(p.data_expiracao)
     }))
 
     setPerfis(perfisFormatados)
@@ -104,9 +65,11 @@ export default function AdminClientes() {
   const salvarPerfil = async (perfil: Perfil) => {
     setSalvandoId(perfil.id)
 
-    const dataISO = converterParaISO(perfil.data_expiracao)
+    const dataISO = perfil.data_expiracao
+      ? perfil.data_expiracao.substring(0, 10)
+      : null
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('perfis')
       .update({
         nome: perfil.nome,
@@ -118,12 +81,19 @@ export default function AdminClientes() {
         data_expiracao: dataISO
       })
       .eq('id', perfil.id)
+      .select()
+      .single()
 
     setSalvandoId(null)
 
     if (error) {
       alert('Erro ao salvar cliente: ' + error.message)
       console.error(error)
+      return
+    }
+
+    if (!data) {
+      alert('Nenhum cliente foi atualizado. Verifique a política RLS da tabela perfis.')
       return
     }
 
@@ -284,8 +254,7 @@ export default function AdminClientes() {
 
                 <label>Data de vencimento</label>
                 <input
-                  type="text"
-                  placeholder="dd/mm/aaaa"
+                  type="date"
                   value={p.data_expiracao || ''}
                   onChange={(e) =>
                     atualizarCampo(
