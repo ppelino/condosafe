@@ -18,24 +18,7 @@ export default function AdminClientes() {
   const [carregando, setCarregando] = useState(true)
   const [salvandoId, setSalvandoId] = useState<string | null>(null)
 
-  const dataParaBR = (data: string | null) => {
-    if (!data) return ''
-    const iso = data.substring(0, 10)
-    const [ano, mes, dia] = iso.split('-')
-    if (!ano || !mes || !dia) return ''
-    return `${dia}/${mes}/${ano}`
-  }
-
-  const dataParaISO = (dataBR: string | null) => {
-    if (!dataBR) return null
-    const partes = dataBR.trim().split('/')
-    if (partes.length !== 3) return null
-
-    const [dia, mes, ano] = partes
-
-    if (dia.length !== 2 || mes.length !== 2 || ano.length !== 4) {
-      return null
-    }
+  
 
     return `${ano}-${mes}-${dia}`
   }
