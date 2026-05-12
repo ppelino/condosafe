@@ -13,6 +13,7 @@ import PlanoAcao from './pages/PlanoAcao'
 import Relatorios from './pages/Relatorios'
 import Configuracoes from './pages/Configuracoes'
 import AdminClientes from './pages/AdminClientes'
+import Planos from './pages/Planos'
 
 function AdminRoute({ user }: { user: User }) {
   const [isAdmin, setIsAdmin] = useState(false)
@@ -117,12 +118,12 @@ export default function App() {
 
       if (perfil.data_expiracao) {
         const hoje = new Date()
-hoje.setHours(0, 0, 0, 0)
+        hoje.setHours(0, 0, 0, 0)
 
-const vencimento = new Date(perfil.data_expiracao)
-vencimento.setHours(0, 0, 0, 0)
+        const vencimento = new Date(perfil.data_expiracao)
+        vencimento.setHours(0, 0, 0, 0)
 
-if (vencimento <= hoje) {
+        if (vencimento <= hoje) {
           setBloqueado(true)
           setVerificandoPlano(false)
           return
@@ -188,11 +189,11 @@ if (vencimento <= hoje) {
   }
 
   if (verificandoPlano) {
-   return (
-  <div className="login-page">
-    <h1>Verificando Plano...</h1>
-  </div>
-)
+    return (
+      <div className="login-page">
+        <h1>Verificando Plano...</h1>
+      </div>
+    )
   }
 
   if (bloqueado) {
@@ -204,14 +205,14 @@ if (vencimento <= hoje) {
 
         <p>Entre em contato com o administrador.</p>
 
-       <button
-  onClick={async () => {
-    await sair()
-    window.location.reload()
-  }}
->
-  Sair
-</button> 
+        <button
+          onClick={async () => {
+            await sair()
+            window.location.reload()
+          }}
+        >
+          Sair
+        </button>
       </div>
     )
   }
@@ -226,6 +227,7 @@ if (vencimento <= hoje) {
           <Route path="nao-conformidades" element={<NaoConformidades />} />
           <Route path="plano-acao" element={<PlanoAcao />} />
           <Route path="relatorios" element={<Relatorios />} />
+          <Route path="planos" element={<Planos />} />
           <Route path="configuracoes" element={<Configuracoes />} />
           <Route path="admin-clientes" element={<AdminRoute user={user} />} />
         </Route>
