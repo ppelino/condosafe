@@ -75,7 +75,17 @@ export default function AdminClientes() {
   const salvarPerfil = async (perfil: Perfil) => {
     setSalvandoId(perfil.id)
 
-    const dataFormatada = dataParaISO(perfil.data_expiracao)
+    const dataFormatada = perfil.data_expiracao
+  ? (() => {
+      const partes = perfil.data_expiracao.split('/')
+
+      if (partes.length !== 3) return null
+
+      const [dia, mes, ano] = partes
+
+      return `${ano}-${mes}-${dia}`
+    })()
+  : null
 
     const { error } = await supabase
       .from('perfis')
