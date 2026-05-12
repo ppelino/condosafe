@@ -57,8 +57,7 @@ export default function Configuracoes() {
         </div>
 
         <div className="card">
-          <h3>Próximas Melhorias</h3>
-          <p>• Responsividade celular/tablet</p>
+          <h3>Próximas Melhorias</h3>        
           <p>• Área do cliente</p>
           <p>• Cadastro automático de novos clientes</p>
           <p>• Alertas de vencimento</p>
