@@ -18,7 +18,46 @@ export default function AdminClientes() {
   const [carregando, setCarregando] = useState(true)
   const [salvandoId, setSalvandoId] = useState<string | null>(null)
 
-  
+  const converterParaBR = (data: string | null) => {
+    if (!data) return ''
+    if (data.includes('/')) return data
+
+    const somenteData = data.substring(0, 10)
+    const [ano, mes, dia] = somenteData.split('-')
+
+    if (!ano || !mes || !dia) return ''
+
+    return `${dia}/${mes}/${ano}`
+  }
+
+  const converterParaISO = (data: string | null) => {
+    if (!data) return null
+
+    const texto = data.trim()
+
+    if (texto === '') return null
+
+    if (texto.includes('-')) {
+      return texto.substring(0, 10)
+    }
+
+    const partes = texto.split('/')
+
+    if (partes.length !== 3) {
+      alert('Data inválida. Use o formato dd/mm/aaaa.')
+      return null
+    }
+
+    const [dia, mes, ano] = partes
+
+    if (
+      dia.length !== 2 ||
+      mes.length !== 2 ||
+      ano.length !== 4
+    ) {
+      alert('Data inválida. Use o formato dd/mm/aaaa.')
+      return null
+    }
 
     return `${ano}-${mes}-${dia}`
   }
@@ -37,7 +76,12 @@ export default function AdminClientes() {
       return
     }
 
-    setPerfis(data || [])
+    const perfisFormatados = (data || []).map((p) => ({
+      ...p,
+      data_expiracao: converterParaBR(p.data_expiracao)
+    }))
+
+    setPerfis(perfisFormatados)
     setCarregando(false)
   }
 
@@ -51,24 +95,16 @@ export default function AdminClientes() {
     valor: string | number | boolean | null
   ) => {
     setPerfis((lista) =>
-      lista.map((p) => (p.id === id ? { ...p, [campo]: valor } : p))
+      lista.map((p) =>
+        p.id === id ? { ...p, [campo]: valor } : p
+      )
     )
   }
 
   const salvarPerfil = async (perfil: Perfil) => {
     setSalvandoId(perfil.id)
 
-    const dataFormatada = perfil.data_expiracao
-  ? (() => {
-      const partes = perfil.data_expiracao.split('/')
-
-      if (partes.length !== 3) return null
-
-      const [dia, mes, ano] = partes
-
-      return `${ano}-${mes}-${dia}`
-    })()
-  : null
+    const dataISO = converterParaISO(perfil.data_expiracao)
 
     const { error } = await supabase
       .from('perfis')
@@ -79,7 +115,7 @@ export default function AdminClientes() {
         limite_condominios: Number(perfil.limite_condominios ?? 0),
         limite_usuarios: Number(perfil.limite_usuarios ?? 0),
         ativo: perfil.ativo === true,
-        data_expiracao: dataFormatada
+        data_expiracao: dataISO
       })
       .eq('id', perfil.id)
 
@@ -92,7 +128,7 @@ export default function AdminClientes() {
     }
 
     alert('Cliente atualizado com sucesso!')
-    carregarPerfis()
+    await carregarPerfis()
   }
 
   const aplicarPlano = (id: string, plano: string) => {
@@ -250,7 +286,7 @@ export default function AdminClientes() {
                 <input
                   type="text"
                   placeholder="dd/mm/aaaa"
-                 value={p.data_expiracao || ''}
+                  value={p.data_expiracao || ''}
                   onChange={(e) =>
                     atualizarCampo(
                       p.id,
