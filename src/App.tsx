@@ -49,8 +49,10 @@ function AdminRoute({ user }: { user: User }) {
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
+  const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [modoCadastro, setModoCadastro] = useState(false)
   const [loading, setLoading] = useState(true)
   const [bloqueado, setBloqueado] = useState(false)
   const [verificandoPlano, setVerificandoPlano] = useState(false)
@@ -148,6 +150,41 @@ export default function App() {
       return
     }
 
+    setNome('')
+    setEmail('')
+    setPassword('')
+  }
+
+  const handleCadastro = async () => {
+    if (!nome || !email || !password) {
+      alert('Preencha nome, email e senha.')
+      return
+    }
+
+    if (password.length < 6) {
+      alert('A senha precisa ter pelo menos 6 caracteres.')
+      return
+    }
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          nome
+        }
+      }
+    })
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    alert('Cadastro criado com sucesso! Agora você já pode acessar o sistema.')
+
+    setModoCadastro(false)
+    setNome('')
     setEmail('')
     setPassword('')
   }
@@ -163,6 +200,25 @@ export default function App() {
     return (
       <div className="login-page">
         <h1>CondoSafe</h1>
+
+        <p>
+          {modoCadastro
+            ? 'Crie sua conta para iniciar o teste grátis.'
+            : 'Acesse sua conta para continuar.'}
+        </p>
+
+        {modoCadastro && (
+          <>
+            <input
+              placeholder="Nome"
+              value={nome}
+              onChange={(e) => setNome(e.target.value)}
+            />
+
+            <br />
+            <br />
+          </>
+        )}
 
         <input
           placeholder="Email"
@@ -183,7 +239,33 @@ export default function App() {
         <br />
         <br />
 
-        <button onClick={handleLogin}>Entrar</button>
+        {modoCadastro ? (
+          <button onClick={handleCadastro}>Criar Conta</button>
+        ) : (
+          <button onClick={handleLogin}>Entrar</button>
+        )}
+
+        <br />
+        <br />
+
+        <button
+          type="button"
+          onClick={() => {
+            setModoCadastro(!modoCadastro)
+            setNome('')
+            setEmail('')
+            setPassword('')
+          }}
+          style={{
+            background: 'transparent',
+            color: '#2563eb',
+            boxShadow: 'none'
+          }}
+        >
+          {modoCadastro
+            ? 'Já tenho conta'
+            : 'Criar nova conta'}
+        </button>
       </div>
     )
   }
