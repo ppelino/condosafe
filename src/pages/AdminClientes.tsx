@@ -23,6 +23,18 @@ export default function AdminClientes() {
     return data.substring(0, 10)
   }
 
+  const verificarAtivoPorData = (data: string | null) => {
+    if (!data) return true
+
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+
+    const vencimento = new Date(data + 'T00:00:00')
+    vencimento.setHours(0, 0, 0, 0)
+
+    return vencimento >= hoje
+  }
+
   const carregarPerfis = async () => {
     setCarregando(true)
 
@@ -69,6 +81,8 @@ export default function AdminClientes() {
       ? perfil.data_expiracao.substring(0, 10)
       : null
 
+    const ativoCalculado = verificarAtivoPorData(dataISO)
+
     const { data, error } = await supabase
       .from('perfis')
       .update({
@@ -77,7 +91,7 @@ export default function AdminClientes() {
         plano: perfil.plano,
         limite_condominios: Number(perfil.limite_condominios ?? 0),
         limite_usuarios: Number(perfil.limite_usuarios ?? 0),
-        ativo: perfil.ativo === true,
+        ativo: ativoCalculado,
         data_expiracao: dataISO
       })
       .eq('id', perfil.id)
