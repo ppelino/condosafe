@@ -49,10 +49,8 @@ function AdminRoute({ user }: { user: User }) {
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
-  const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [modoCadastro, setModoCadastro] = useState(false)
   const [loading, setLoading] = useState(true)
   const [bloqueado, setBloqueado] = useState(false)
   const [verificandoPlano, setVerificandoPlano] = useState(false)
@@ -150,41 +148,6 @@ export default function App() {
       return
     }
 
-    setNome('')
-    setEmail('')
-    setPassword('')
-  }
-
-  const handleCadastro = async () => {
-    if (!nome || !email || !password) {
-      alert('Preencha nome, email e senha.')
-      return
-    }
-
-    if (password.length < 6) {
-      alert('A senha precisa ter pelo menos 6 caracteres.')
-      return
-    }
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          nome
-        }
-      }
-    })
-
-    if (error) {
-      alert(error.message)
-      return
-    }
-
-    alert('Cadastro criado com sucesso! Agora você já pode acessar o sistema.')
-
-    setModoCadastro(false)
-    setNome('')
     setEmail('')
     setPassword('')
   }
@@ -194,107 +157,102 @@ export default function App() {
     await supabase.auth.signOut()
   }
 
-  if (loading) return <p>Carregando...</p>
+  if (loading) {
+    return (
+      <div style={styles.loginPage}>
+        <div style={styles.loginCard}>
+          <h1 style={styles.logo}>CondoSafe</h1>
+          <p style={styles.subtitle}>Carregando sistema...</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!user) {
     return (
-      <div className="login-page">
-        <h1>CondoSafe</h1>
+      <div style={styles.loginPage}>
+        <div style={styles.loginCard}>
+          <div style={styles.badge}>CondoSafe Inspector</div>
 
-        <p>
-          {modoCadastro
-            ? 'Crie sua conta para iniciar o teste grátis.'
-            : 'Acesse sua conta para continuar.'}
-        </p>
+          <h1 style={styles.logo}>Acesso ao Sistema</h1>
 
-        {modoCadastro && (
-          <>
+          <p style={styles.subtitle}>
+            Gestão profissional de condomínios, vistorias, não conformidades,
+            planos de ação e relatórios técnicos.
+          </p>
+
+          <div style={styles.formBox}>
+            <label style={styles.label}>E-mail</label>
             <input
-              placeholder="Nome"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
+              style={styles.input}
+              placeholder="Digite seu e-mail"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
 
-            <br />
-            <br />
-          </>
-        )}
+            <label style={styles.label}>Senha</label>
+            <input
+              style={styles.input}
+              type="password"
+              placeholder="Digite sua senha"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleLogin()
+              }}
+            />
 
-        <input
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+            <button style={styles.primaryButton} onClick={handleLogin}>
+              Entrar
+            </button>
+          </div>
 
-        <br />
-        <br />
-
-        <input
-          type="password"
-          placeholder="Senha"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <br />
-        <br />
-
-        {modoCadastro ? (
-          <button onClick={handleCadastro}>Criar Conta</button>
-        ) : (
-          <button onClick={handleLogin}>Entrar</button>
-        )}
-
-        <br />
-        <br />
-
-        <button
-          type="button"
-          onClick={() => {
-            setModoCadastro(!modoCadastro)
-            setNome('')
-            setEmail('')
-            setPassword('')
-          }}
-          style={{
-            background: 'transparent',
-            color: '#2563eb',
-            boxShadow: 'none'
-          }}
-        >
-          {modoCadastro
-            ? 'Já tenho conta'
-            : 'Criar nova conta'}
-        </button>
+          <div style={styles.infoBox}>
+            <strong>Acesso controlado</strong>
+            <p>
+              Novos usuários devem ser cadastrados e liberados pelo administrador
+              do sistema.
+            </p>
+          </div>
+        </div>
       </div>
     )
   }
 
   if (verificandoPlano) {
     return (
-      <div className="login-page">
-        <h1>Verificando Plano...</h1>
+      <div style={styles.loginPage}>
+        <div style={styles.loginCard}>
+          <h1 style={styles.logo}>Verificando Plano...</h1>
+          <p style={styles.subtitle}>Aguarde enquanto validamos seu acesso.</p>
+        </div>
       </div>
     )
   }
 
   if (bloqueado) {
     return (
-      <div className="login-page">
-        <h1>Plano Expirado</h1>
+      <div style={styles.loginPage}>
+        <div style={styles.loginCard}>
+          <div style={styles.badgeDanger}>Acesso bloqueado</div>
 
-        <p>Seu acesso foi bloqueado.</p>
+          <h1 style={styles.logo}>Plano Expirado</h1>
 
-        <p>Entre em contato com o administrador.</p>
+          <p style={styles.subtitle}>
+            Seu acesso foi bloqueado. Entre em contato com o administrador para
+            regularizar seu plano.
+          </p>
 
-        <button
-          onClick={async () => {
-            await sair()
-            window.location.reload()
-          }}
-        >
-          Sair
-        </button>
+          <button
+            style={styles.primaryButton}
+            onClick={async () => {
+              await sair()
+              window.location.reload()
+            }}
+          >
+            Sair
+          </button>
+        </div>
       </div>
     )
   }
@@ -316,4 +274,115 @@ export default function App() {
       </Routes>
     </BrowserRouter>
   )
+}
+
+const styles: { [key: string]: React.CSSProperties } = {
+  loginPage: {
+    minHeight: '100vh',
+    width: '100%',
+    background:
+      'linear-gradient(135deg, #0f172a 0%, #1e3a8a 45%, #eff6ff 45%, #f8fafc 100%)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '24px',
+    boxSizing: 'border-box'
+  },
+
+  loginCard: {
+    width: '100%',
+    maxWidth: '460px',
+    background: '#ffffff',
+    borderRadius: '28px',
+    padding: '32px',
+    boxShadow: '0 30px 80px rgba(15, 23, 42, 0.22)',
+    border: '1px solid rgba(226, 232, 240, 0.9)',
+    boxSizing: 'border-box'
+  },
+
+  badge: {
+    display: 'inline-block',
+    padding: '7px 14px',
+    borderRadius: '999px',
+    background: '#dbeafe',
+    color: '#1d4ed8',
+    fontWeight: 700,
+    fontSize: '13px',
+    marginBottom: '14px'
+  },
+
+  badgeDanger: {
+    display: 'inline-block',
+    padding: '7px 14px',
+    borderRadius: '999px',
+    background: '#fee2e2',
+    color: '#b91c1c',
+    fontWeight: 700,
+    fontSize: '13px',
+    marginBottom: '14px'
+  },
+
+  logo: {
+    margin: 0,
+    color: '#0f172a',
+    fontSize: 'clamp(28px, 5vw, 38px)',
+    lineHeight: 1.1,
+    fontWeight: 800
+  },
+
+  subtitle: {
+    color: '#475569',
+    fontSize: '15px',
+    lineHeight: 1.5,
+    marginTop: '12px',
+    marginBottom: '22px'
+  },
+
+  formBox: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px'
+  },
+
+  label: {
+    fontWeight: 700,
+    color: '#1e293b',
+    fontSize: '14px',
+    marginTop: '6px'
+  },
+
+  input: {
+    width: '100%',
+    padding: '14px 16px',
+    borderRadius: '14px',
+    border: '1px solid #cbd5e1',
+    fontSize: '15px',
+    outline: 'none',
+    boxSizing: 'border-box',
+    background: '#f8fafc'
+  },
+
+  primaryButton: {
+    width: '100%',
+    marginTop: '14px',
+    padding: '14px 18px',
+    border: 0,
+    borderRadius: '14px',
+    background: '#2563eb',
+    color: '#ffffff',
+    fontWeight: 800,
+    fontSize: '15px',
+    cursor: 'pointer',
+    boxShadow: '0 12px 24px rgba(37, 99, 235, 0.28)'
+  },
+
+  infoBox: {
+    marginTop: '22px',
+    padding: '14px',
+    borderRadius: '16px',
+    background: '#f1f5f9',
+    color: '#334155',
+    fontSize: '14px',
+    lineHeight: 1.45
+  }
 }
