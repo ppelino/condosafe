@@ -18,15 +18,21 @@ export default function Dashboard() {
   const [taxaConformidade, setTaxaConformidade] = useState(0)
   const [ranking, setRanking] = useState<RankingCondominio[]>([])
   const [isAdmin, setIsAdmin] = useState(false)
+  const [carregando, setCarregando] = useState(true)
 
   const carregarIndicadores = async () => {
+    setCarregando(true)
+
     const hoje = new Date().toISOString().split('T')[0]
 
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
-    if (!user) return
+    if (!user) {
+      setCarregando(false)
+      return
+    }
 
     const { data: perfil } = await supabase
       .from('perfis')
@@ -44,9 +50,7 @@ export default function Dashboard() {
       .from('condominios')
       .select('*', { count: 'exact', head: true })
 
-    if (!admin) {
-      qCondominios = qCondominios.eq('user_id', user.id)
-    }
+    if (!admin) qCondominios = qCondominios.eq('user_id', user.id)
 
     const { count: condominios } = await qCondominios
 
@@ -54,9 +58,7 @@ export default function Dashboard() {
       .from('vistorias')
       .select('*', { count: 'exact', head: true })
 
-    if (!admin) {
-      qVistorias = qVistorias.eq('user_id', user.id)
-    }
+    if (!admin) qVistorias = qVistorias.eq('user_id', user.id)
 
     const { count: vistorias } = await qVistorias
 
@@ -64,9 +66,7 @@ export default function Dashboard() {
       .from('nao_conformidades')
       .select('*', { count: 'exact', head: true })
 
-    if (!admin) {
-      qNCs = qNCs.eq('user_id', user.id)
-    }
+    if (!admin) qNCs = qNCs.eq('user_id', user.id)
 
     const { count: ncs } = await qNCs
 
@@ -75,9 +75,7 @@ export default function Dashboard() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'aberta')
 
-    if (!admin) {
-      qAbertas = qAbertas.eq('user_id', user.id)
-    }
+    if (!admin) qAbertas = qAbertas.eq('user_id', user.id)
 
     const { count: abertas } = await qAbertas
 
@@ -86,9 +84,7 @@ export default function Dashboard() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'concluida')
 
-    if (!admin) {
-      qConcluidas = qConcluidas.eq('user_id', user.id)
-    }
+    if (!admin) qConcluidas = qConcluidas.eq('user_id', user.id)
 
     const { count: concluidas } = await qConcluidas
 
@@ -96,9 +92,7 @@ export default function Dashboard() {
       .from('plano_acao')
       .select('*', { count: 'exact', head: true })
 
-    if (!admin) {
-      qPlanos = qPlanos.eq('user_id', user.id)
-    }
+    if (!admin) qPlanos = qPlanos.eq('user_id', user.id)
 
     const { count: planos } = await qPlanos
 
@@ -107,9 +101,7 @@ export default function Dashboard() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pendente')
 
-    if (!admin) {
-      qPendentes = qPendentes.eq('user_id', user.id)
-    }
+    if (!admin) qPendentes = qPendentes.eq('user_id', user.id)
 
     const { count: pendentes } = await qPendentes
 
@@ -119,9 +111,7 @@ export default function Dashboard() {
       .lt('prazo', hoje)
       .neq('status', 'concluida')
 
-    if (!admin) {
-      qAtrasados = qAtrasados.eq('user_id', user.id)
-    }
+    if (!admin) qAtrasados = qAtrasados.eq('user_id', user.id)
 
     const { count: atrasados } = await qAtrasados
 
@@ -134,9 +124,7 @@ export default function Dashboard() {
         )
       `)
 
-    if (!admin) {
-      qRanking = qRanking.eq('user_id', user.id)
-    }
+    if (!admin) qRanking = qRanking.eq('user_id', user.id)
 
     const { data: rankingData } = await qRanking
 
@@ -172,6 +160,7 @@ export default function Dashboard() {
         : 100
 
     setTaxaConformidade(Number(taxa.toFixed(1)))
+    setCarregando(false)
   }
 
   useEffect(() => {
@@ -179,19 +168,90 @@ export default function Dashboard() {
   }, [])
 
   const maiorRanking =
-    ranking.length > 0
-      ? Math.max(...ranking.map((r) => r.total))
-      : 1
+    ranking.length > 0 ? Math.max(...ranking.map((r) => r.total)) : 1
 
   const percentualAbertas =
-    totalNCs > 0
-      ? Math.round((ncsAbertas / totalNCs) * 100)
-      : 0
+    totalNCs > 0 ? Math.round((ncsAbertas / totalNCs) * 100) : 0
 
   const percentualConcluidas =
-    totalNCs > 0
-      ? Math.round((ncsConcluidas / totalNCs) * 100)
-      : 0
+    totalNCs > 0 ? Math.round((ncsConcluidas / totalNCs) * 100) : 0
+
+  const situacaoGeral =
+    planosAtrasados > 0
+      ? 'Atenção: existem planos de ação atrasados que exigem acompanhamento.'
+      : ncsAbertas > 0
+      ? 'Existem não conformidades abertas que precisam de tratativa.'
+      : 'Situação controlada: não há pendências críticas no momento.'
+
+  const statusConformidade =
+    taxaConformidade >= 80
+      ? 'Bom'
+      : taxaConformidade >= 50
+      ? 'Atenção'
+      : 'Crítico'
+
+  const maiorRisco =
+    ranking.length > 0 ? ranking[0].nome : 'Sem registros'
+
+  const kpiCard = (
+    titulo: string,
+    valor: number | string,
+    descricao: string,
+    icone: string,
+    destaque?: string
+  ) => (
+    <div
+      className="card"
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        minHeight: '135px',
+        transition: '0.2s ease',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          right: '18px',
+          top: '18px',
+          fontSize: '26px',
+          opacity: 0.18,
+        }}
+      >
+        {icone}
+      </div>
+
+      <p style={{ color: '#334155', fontWeight: 600 }}>{titulo}</p>
+
+      <h2
+        style={{
+          fontSize: '34px',
+          margin: '6px 0',
+          color: destaque || '#0f172a',
+        }}
+      >
+        {valor}
+      </h2>
+
+      <small>{descricao}</small>
+    </div>
+  )
+
+  if (carregando) {
+    return (
+      <>
+        <div className="header">
+          <div className="premium-badge">CondoSafe Inspector</div>
+          <h1>Dashboard Executivo</h1>
+          <p>Carregando indicadores estratégicos...</p>
+        </div>
+
+        <div className="card">
+          <p>Buscando dados do sistema...</p>
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
@@ -205,179 +265,161 @@ export default function Dashboard() {
         </h1>
 
         <p>
-          Indicadores estratégicos de inspeções, conformidade,
-          riscos e planos de ação.
+          Indicadores estratégicos de inspeções, conformidade, riscos e planos
+          de ação.
         </p>
       </div>
 
-      <div className="cards">
-        <div className="card">
-          <p>Condomínios</p>
-          <h2>{totalCondominios}</h2>
-          <small>Empresas monitoradas</small>
-        </div>
+      <div
+        className="card"
+        style={{
+          borderLeft: planosAtrasados > 0 ? '5px solid #dc2626' : '5px solid #16a34a',
+          background: '#ffffff',
+        }}
+      >
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '16px',
+            alignItems: 'center',
+          }}
+        >
+          <div>
+            <h3>Situação Geral</h3>
+            <p style={{ color: '#475569' }}>{situacaoGeral}</p>
+          </div>
 
-        <div className="card">
-          <p>Vistorias</p>
-          <h2>{totalVistorias}</h2>
-          <small>Inspeções realizadas</small>
-        </div>
+          <div>
+            <strong>Conformidade</strong>
+            <h2 style={{ color: taxaConformidade >= 80 ? '#16a34a' : taxaConformidade >= 50 ? '#f59e0b' : '#dc2626' }}>
+              {taxaConformidade}% — {statusConformidade}
+            </h2>
+          </div>
 
-        <div className="card">
-          <p>Não Conformidades</p>
-          <h2>{totalNCs}</h2>
-          <small>Ocorrências registradas</small>
-        </div>
-
-        <div className="card">
-          <p>NCs Abertas</p>
-          <h2>{ncsAbertas}</h2>
-          <small>{percentualAbertas}% do total</small>
-        </div>
-
-        <div className="card">
-          <p>NCs Concluídas</p>
-          <h2>{ncsConcluidas}</h2>
-          <small>{percentualConcluidas}% resolvidas</small>
-        </div>
-
-        <div className="card">
-          <p>Planos de Ação</p>
-          <h2>{totalPlanos}</h2>
-          <small>Ações cadastradas</small>
-        </div>
-
-        <div className="card">
-          <p>Planos Pendentes</p>
-          <h2>{planosPendentes}</h2>
-          <small>Demandas em aberto</small>
-        </div>
-
-        <div className="card">
-          <p>Planos Atrasados</p>
-          <h2>{planosAtrasados}</h2>
-          <small>Exigem atenção</small>
-        </div>
-
-        <div className="card">
-          <p>Índice de Conformidade</p>
-          <h2>{taxaConformidade}%</h2>
-          <small>Indicador geral</small>
+          <div>
+            <strong>Maior risco atual</strong>
+            <p style={{ marginTop: '8px' }}>{maiorRisco}</p>
+          </div>
         </div>
       </div>
 
-      <div className="cards" style={{ marginTop: '24px' }}>
+      <div className="cards">
+        {kpiCard('Condomínios', totalCondominios, 'Empresas monitoradas', '🏢')}
+
+        {kpiCard('Vistorias', totalVistorias, 'Inspeções realizadas', '📋')}
+
+        {kpiCard('Não Conformidades', totalNCs, 'Ocorrências registradas', '⚠️')}
+
+        {kpiCard(
+          'NCs Abertas',
+          ncsAbertas,
+          `${percentualAbertas}% do total`,
+          '🔴',
+          ncsAbertas > 0 ? '#dc2626' : '#0f172a'
+        )}
+
+        {kpiCard(
+          'NCs Concluídas',
+          ncsConcluidas,
+          `${percentualConcluidas}% resolvidas`,
+          '✅',
+          '#16a34a'
+        )}
+
+        {kpiCard('Planos de Ação', totalPlanos, 'Ações cadastradas', '🛠️')}
+
+        {kpiCard(
+          'Planos Pendentes',
+          planosPendentes,
+          'Demandas em aberto',
+          '🕒',
+          planosPendentes > 0 ? '#f59e0b' : '#0f172a'
+        )}
+
+        {kpiCard(
+          'Planos Atrasados',
+          planosAtrasados,
+          'Exigem atenção',
+          '⏰',
+          planosAtrasados > 0 ? '#dc2626' : '#16a34a'
+        )}
+
+        {kpiCard(
+          'Índice de Conformidade',
+          `${taxaConformidade}%`,
+          'Indicador geral',
+          '📈',
+          taxaConformidade >= 80 ? '#16a34a' : taxaConformidade >= 50 ? '#f59e0b' : '#dc2626'
+        )}
+      </div>
+
+      <div className="dashboard-grid" style={{ marginTop: '24px' }}>
         <div className="card">
           <h3>Distribuição das Não Conformidades</h3>
+          <p style={{ color: '#64748b', marginBottom: '18px' }}>
+            Comparativo entre ocorrências abertas e concluídas.
+          </p>
 
-          <div style={{ marginTop: '20px' }}>
-            <div style={{ marginBottom: '14px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginBottom: '4px',
-                }}
-              >
-                <span>Abertas</span>
-                <strong>{percentualAbertas}%</strong>
-              </div>
+          <div className="chart-row">
+            <span>Abertas</span>
 
+            <div className="bar-track">
               <div
-                style={{
-                  width: '100%',
-                  height: '10px',
-                  background: '#e5e7eb',
-                  borderRadius: '999px',
-                }}
-              >
-                <div
-                  style={{
-                    width: `${percentualAbertas}%`,
-                    height: '10px',
-                    background: '#dc2626',
-                    borderRadius: '999px',
-                  }}
-                />
-              </div>
+                className="bar-fill danger"
+                style={{ width: `${percentualAbertas}%` }}
+              />
             </div>
 
-            <div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginBottom: '4px',
-                }}
-              >
-                <span>Concluídas</span>
-                <strong>{percentualConcluidas}%</strong>
-              </div>
+            <strong>{percentualAbertas}%</strong>
+          </div>
 
+          <div className="chart-row">
+            <span>Concluídas</span>
+
+            <div className="bar-track">
               <div
-                style={{
-                  width: '100%',
-                  height: '10px',
-                  background: '#e5e7eb',
-                  borderRadius: '999px',
-                }}
-              >
-                <div
-                  style={{
-                    width: `${percentualConcluidas}%`,
-                    height: '10px',
-                    background: '#16a34a',
-                    borderRadius: '999px',
-                  }}
-                />
-              </div>
+                className="bar-fill success"
+                style={{ width: `${percentualConcluidas}%` }}
+              />
             </div>
+
+            <strong>{percentualConcluidas}%</strong>
           </div>
         </div>
 
         <div className="card">
           <h3>Ranking de Risco por Condomínio</h3>
+          <p style={{ color: '#64748b', marginBottom: '18px' }}>
+            Condomínios com maior volume de não conformidades.
+          </p>
 
           {ranking.length === 0 ? (
             <p>Nenhuma não conformidade registrada.</p>
           ) : (
-            <div style={{ marginTop: '16px' }}>
-              {ranking.map((item) => (
-                <div
-                  key={item.nome}
-                  style={{ marginBottom: '14px' }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginBottom: '4px',
-                    }}
-                  >
-                    <span>{item.nome}</span>
-                    <strong>{item.total}</strong>
+            ranking.map((item, index) => (
+              <div className="ranking-item" key={item.nome}>
+                <div className="ranking-top">
+                  <div>
+                    <strong>
+                      {index + 1}. {item.nome}
+                    </strong>
+                    <small>{item.total} ocorrência(s)</small>
                   </div>
 
-                  <div
-                    style={{
-                      width: '100%',
-                      height: '12px',
-                      background: '#e5e7eb',
-                      borderRadius: '999px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: `${(item.total / maiorRanking) * 100}%`,
-                        height: '12px',
-                        background: '#2563eb',
-                        borderRadius: '999px',
-                      }}
-                    />
-                  </div>
+                  <strong>{item.total}</strong>
                 </div>
-              ))}
-            </div>
+
+                <div className="bar-track">
+                  <div
+                    className="bar-fill primary"
+                    style={{
+                      width: `${(item.total / maiorRanking) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>
