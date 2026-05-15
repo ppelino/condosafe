@@ -207,7 +207,13 @@ export default function Dashboard() {
         overflow: 'hidden',
         minHeight: '135px',
         transition: '0.2s ease',
-      }}
+      }
+        .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.12);
+}
+      
+    
     >
       <div
         style={{
