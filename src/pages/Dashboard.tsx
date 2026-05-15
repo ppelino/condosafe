@@ -269,17 +269,26 @@ export default function Dashboard() {
         minHeight: '135px',
       }}
     >
-      <div
-        style={{
-          position: 'absolute',
-          right: '18px',
-          top: '18px',
-          fontSize: '26px',
-          opacity: 0.18,
-        }}
-      >
-        {icone}
-      </div>
+    <div
+  style={{
+    position: 'absolute',
+    right: '16px',
+    top: '16px',
+    width: '42px',
+    height: '42px',
+    borderRadius: '14px',
+    background: '#eff6ff',
+    color: '#2563eb',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '24px',
+    opacity: 1,
+    boxShadow: '0 6px 14px rgba(37, 99, 235, 0.12)',
+  }}
+>
+  {icone}
+</div>
 
       <p style={{ color: '#334155', fontWeight: 600 }}>{titulo}</p>
 
