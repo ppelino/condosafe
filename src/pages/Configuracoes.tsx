@@ -53,15 +53,15 @@ export default function Configuracoes() {
           <p><strong>Tema atual:</strong> Claro</p>
           <p><strong>Sidebar:</strong> Azul escuro</p>
           <p><strong>Estilo:</strong> SaaS profissional</p>
-          <p><strong>Status:</strong> Layout em evolução responsiva.</p>
+          <p><strong>Status:</strong> Layout responsivo para PC, tablet e celular.</p>
         </div>
 
         <div className="card">
-          <h3>Próximas Melhorias</h3>        
+          <h3>Próximas Melhorias</h3>
           <p>• Área do cliente</p>
           <p>• Cadastro automático de novos clientes</p>
           <p>• Alertas de vencimento</p>
-          <p>• Dashboard com gráficos avançados</p>
+          <p>• Analytics avançado e histórico de evolução</p>
         </div>
       </div>
     </>
