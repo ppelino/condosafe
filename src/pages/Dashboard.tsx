@@ -6,6 +6,11 @@ type RankingCondominio = {
   total: number
 }
 
+type EvolucaoMensal = {
+  mes: string
+  total: number
+}
+
 export default function Dashboard() {
   const [totalCondominios, setTotalCondominios] = useState(0)
   const [totalVistorias, setTotalVistorias] = useState(0)
@@ -15,8 +20,10 @@ export default function Dashboard() {
   const [totalPlanos, setTotalPlanos] = useState(0)
   const [planosPendentes, setPlanosPendentes] = useState(0)
   const [planosAtrasados, setPlanosAtrasados] = useState(0)
+  const [planosConcluidos, setPlanosConcluidos] = useState(0)
   const [taxaConformidade, setTaxaConformidade] = useState(0)
   const [ranking, setRanking] = useState<RankingCondominio[]>([])
+  const [evolucaoNCs, setEvolucaoNCs] = useState<EvolucaoMensal[]>([])
   const [isAdmin, setIsAdmin] = useState(false)
   const [carregando, setCarregando] = useState(true)
 
@@ -105,6 +112,15 @@ export default function Dashboard() {
 
     const { count: pendentes } = await qPendentes
 
+    let qPlanosConcluidos = supabase
+      .from('plano_acao')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'concluida')
+
+    if (!admin) qPlanosConcluidos = qPlanosConcluidos.eq('user_id', user.id)
+
+    const { count: concluidosPlanos } = await qPlanosConcluidos
+
     let qAtrasados = supabase
       .from('plano_acao')
       .select('*', { count: 'exact', head: true })
@@ -119,6 +135,7 @@ export default function Dashboard() {
       .from('nao_conformidades')
       .select(`
         id,
+        created_at,
         condominios (
           nome
         )
@@ -143,7 +160,38 @@ export default function Dashboard() {
       .sort((a, b) => b.total - a.total)
       .slice(0, 5)
 
+    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+    const mapaMeses: Record<string, number> = {}
+
+    const hojeData = new Date()
+
+    for (let i = 5; i >= 0; i--) {
+      const dataBase = new Date(hojeData.getFullYear(), hojeData.getMonth() - i, 1)
+      const chave = `${dataBase.getFullYear()}-${String(dataBase.getMonth() + 1).padStart(2, '0')}`
+      mapaMeses[chave] = 0
+    }
+
+    ;(rankingData || []).forEach((item: any) => {
+      if (!item.created_at) return
+
+      const dataNC = new Date(item.created_at)
+      const chave = `${dataNC.getFullYear()}-${String(dataNC.getMonth() + 1).padStart(2, '0')}`
+
+      if (chave in mapaMeses) {
+        mapaMeses[chave] += 1
+      }
+    })
+
+    const evolucaoFormatada = Object.entries(mapaMeses).map(([chave, total]) => {
+      const [, mes] = chave.split('-')
+      return {
+        mes: meses[Number(mes) - 1],
+        total,
+      }
+    })
+
     setRanking(rankingFormatado)
+    setEvolucaoNCs(evolucaoFormatada)
 
     setTotalCondominios(condominios || 0)
     setTotalVistorias(vistorias || 0)
@@ -153,6 +201,7 @@ export default function Dashboard() {
     setTotalPlanos(planos || 0)
     setPlanosPendentes(pendentes || 0)
     setPlanosAtrasados(atrasados || 0)
+    setPlanosConcluidos(concluidosPlanos || 0)
 
     const taxa =
       ncs && ncs > 0
@@ -170,11 +219,23 @@ export default function Dashboard() {
   const maiorRanking =
     ranking.length > 0 ? Math.max(...ranking.map((r) => r.total)) : 1
 
+  const maiorEvolucao =
+    evolucaoNCs.length > 0 ? Math.max(...evolucaoNCs.map((e) => e.total), 1) : 1
+
   const percentualAbertas =
     totalNCs > 0 ? Math.round((ncsAbertas / totalNCs) * 100) : 0
 
   const percentualConcluidas =
     totalNCs > 0 ? Math.round((ncsConcluidas / totalNCs) * 100) : 0
+
+  const percentualPlanosPendentes =
+    totalPlanos > 0 ? Math.round((planosPendentes / totalPlanos) * 100) : 0
+
+  const percentualPlanosConcluidos =
+    totalPlanos > 0 ? Math.round((planosConcluidos / totalPlanos) * 100) : 0
+
+  const percentualPlanosAtrasados =
+    totalPlanos > 0 ? Math.round((planosAtrasados / totalPlanos) * 100) : 0
 
   const situacaoGeral =
     planosAtrasados > 0
@@ -206,9 +267,7 @@ export default function Dashboard() {
         position: 'relative',
         overflow: 'hidden',
         minHeight: '135px',
-        transition: '0.2s ease',
       }}
-    
     >
       <div
         style={{
@@ -266,8 +325,8 @@ export default function Dashboard() {
         </h1>
 
         <p>
-          Indicadores estratégicos de inspeções, conformidade, riscos e planos
-          de ação.
+          Indicadores estratégicos de inspeções, conformidade, riscos,
+          planos de ação e evolução operacional.
         </p>
       </div>
 
@@ -293,7 +352,16 @@ export default function Dashboard() {
 
           <div>
             <strong>Conformidade</strong>
-            <h2 style={{ color: taxaConformidade >= 80 ? '#16a34a' : taxaConformidade >= 50 ? '#f59e0b' : '#dc2626' }}>
+            <h2
+              style={{
+                color:
+                  taxaConformidade >= 80
+                    ? '#16a34a'
+                    : taxaConformidade >= 50
+                    ? '#f59e0b'
+                    : '#dc2626',
+              }}
+            >
               {taxaConformidade}% — {statusConformidade}
             </h2>
           </div>
@@ -307,52 +375,14 @@ export default function Dashboard() {
 
       <div className="cards">
         {kpiCard('Condomínios', totalCondominios, 'Empresas monitoradas', '🏢')}
-
         {kpiCard('Vistorias', totalVistorias, 'Inspeções realizadas', '📋')}
-
         {kpiCard('Não Conformidades', totalNCs, 'Ocorrências registradas', '⚠️')}
-
-        {kpiCard(
-          'NCs Abertas',
-          ncsAbertas,
-          `${percentualAbertas}% do total`,
-          '🔴',
-          ncsAbertas > 0 ? '#dc2626' : '#0f172a'
-        )}
-
-        {kpiCard(
-          'NCs Concluídas',
-          ncsConcluidas,
-          `${percentualConcluidas}% resolvidas`,
-          '✅',
-          '#16a34a'
-        )}
-
+        {kpiCard('NCs Abertas', ncsAbertas, `${percentualAbertas}% do total`, '🔴', ncsAbertas > 0 ? '#dc2626' : '#0f172a')}
+        {kpiCard('NCs Concluídas', ncsConcluidas, `${percentualConcluidas}% resolvidas`, '✅', '#16a34a')}
         {kpiCard('Planos de Ação', totalPlanos, 'Ações cadastradas', '🛠️')}
-
-        {kpiCard(
-          'Planos Pendentes',
-          planosPendentes,
-          'Demandas em aberto',
-          '🕒',
-          planosPendentes > 0 ? '#f59e0b' : '#0f172a'
-        )}
-
-        {kpiCard(
-          'Planos Atrasados',
-          planosAtrasados,
-          'Exigem atenção',
-          '⏰',
-          planosAtrasados > 0 ? '#dc2626' : '#16a34a'
-        )}
-
-        {kpiCard(
-          'Índice de Conformidade',
-          `${taxaConformidade}%`,
-          'Indicador geral',
-          '📈',
-          taxaConformidade >= 80 ? '#16a34a' : taxaConformidade >= 50 ? '#f59e0b' : '#dc2626'
-        )}
+        {kpiCard('Planos Pendentes', planosPendentes, 'Demandas em aberto', '🕒', planosPendentes > 0 ? '#f59e0b' : '#0f172a')}
+        {kpiCard('Planos Atrasados', planosAtrasados, 'Exigem atenção', '⏰', planosAtrasados > 0 ? '#dc2626' : '#16a34a')}
+        {kpiCard('Índice de Conformidade', `${taxaConformidade}%`, 'Indicador geral', '📈', taxaConformidade >= 80 ? '#16a34a' : taxaConformidade >= 50 ? '#f59e0b' : '#dc2626')}
       </div>
 
       <div className="dashboard-grid" style={{ marginTop: '24px' }}>
@@ -364,28 +394,95 @@ export default function Dashboard() {
 
           <div className="chart-row">
             <span>Abertas</span>
-
             <div className="bar-track">
-              <div
-                className="bar-fill danger"
-                style={{ width: `${percentualAbertas}%` }}
-              />
+              <div className="bar-fill danger" style={{ width: `${percentualAbertas}%` }} />
             </div>
-
             <strong>{percentualAbertas}%</strong>
           </div>
 
           <div className="chart-row">
             <span>Concluídas</span>
-
             <div className="bar-track">
-              <div
-                className="bar-fill success"
-                style={{ width: `${percentualConcluidas}%` }}
-              />
+              <div className="bar-fill success" style={{ width: `${percentualConcluidas}%` }} />
             </div>
-
             <strong>{percentualConcluidas}%</strong>
+          </div>
+        </div>
+
+        <div className="card">
+          <h3>Status dos Planos de Ação</h3>
+          <p style={{ color: '#64748b', marginBottom: '18px' }}>
+            Visão executiva das ações corretivas cadastradas.
+          </p>
+
+          <div className="chart-row">
+            <span>Pendentes</span>
+            <div className="bar-track">
+              <div className="bar-fill warning" style={{ width: `${percentualPlanosPendentes}%` }} />
+            </div>
+            <strong>{percentualPlanosPendentes}%</strong>
+          </div>
+
+          <div className="chart-row">
+            <span>Atrasados</span>
+            <div className="bar-track">
+              <div className="bar-fill danger" style={{ width: `${percentualPlanosAtrasados}%` }} />
+            </div>
+            <strong>{percentualPlanosAtrasados}%</strong>
+          </div>
+
+          <div className="chart-row">
+            <span>Concluídos</span>
+            <div className="bar-track">
+              <div className="bar-fill success" style={{ width: `${percentualPlanosConcluidos}%` }} />
+            </div>
+            <strong>{percentualPlanosConcluidos}%</strong>
+          </div>
+        </div>
+      </div>
+
+      <div className="dashboard-grid" style={{ marginTop: '24px' }}>
+        <div className="card">
+          <h3>Evolução Mensal das NCs</h3>
+          <p style={{ color: '#64748b', marginBottom: '18px' }}>
+            Volume de não conformidades nos últimos 6 meses.
+          </p>
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: `repeat(${evolucaoNCs.length || 1}, 1fr)`,
+              gap: '12px',
+              alignItems: 'end',
+              minHeight: '180px',
+            }}
+          >
+            {evolucaoNCs.map((item) => (
+              <div key={item.mes} style={{ textAlign: 'center' }}>
+                <strong style={{ fontSize: '13px' }}>{item.total}</strong>
+
+                <div
+                  style={{
+                    height: '130px',
+                    display: 'flex',
+                    alignItems: 'end',
+                    justifyContent: 'center',
+                    margin: '8px 0',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: '34px',
+                      height: `${Math.max((item.total / maiorEvolucao) * 120, item.total > 0 ? 14 : 4)}px`,
+                      background: item.total > 0 ? '#2563eb' : '#e5e7eb',
+                      borderRadius: '10px 10px 4px 4px',
+                    }}
+                  />
+                </div>
+
+                <small>{item.mes}</small>
+              </div>
+            ))}
           </div>
         </div>
 
